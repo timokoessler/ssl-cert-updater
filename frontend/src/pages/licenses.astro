@@ -1,0 +1,157 @@
+---
+import PageHeader from '@components/PageHeader.astro';
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout>
+    <PageHeader title="Lizenzen" preTitle={import.meta.env.PUBLIC_APP_NAME} visible={true} />
+    <div class="page-body">
+        <div class="container-xl" id="container">
+            <div class="row mt-3">
+                <div class="col-lg-6 mt-4 mt-lg-0">
+                    <div class="card shadow">
+                        <div class="card-body pe-2" id="card-body">
+                            <div id="container">
+                                <div class="list-group list-group-flush list-group-hoverable" id="licenses-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 mt-3 mt-lg-0"></div>
+            </div>
+        </div>
+    </div>
+</BaseLayout>
+
+<style></style>
+<script>
+    import { onPageLoad } from '@scripts/router';
+
+    const licenses = [
+        {
+            name: 'Bootstrap',
+            url: 'https://github.com/twbs/bootstrap',
+            copyright: 'Copyright (c) 2011-2023 The Bootstrap Authors',
+            license: 'MIT License',
+        },
+        {
+            name: 'tabler',
+            url: 'https://github.com/tabler/tabler',
+            copyright: 'Copyright (c) 2018-2023 The Tabler Authors',
+            license: 'MIT License',
+        },
+        {
+            name: 'tabler icons',
+            url: 'https://github.com/tabler/tabler-icons',
+            copyright: 'Copyright (c) 2020-2023 Paweł Kuna',
+            license: 'MIT License',
+        },
+        {
+            name: 'Socket.IO',
+            url: 'https://github.com/socketio/socket.io',
+            copyright: 'Copyright (c) 2014-2018 Automattic <dev@cloudup.com>',
+            license: 'MIT License',
+        },
+        {
+            name: 'Astro',
+            url: 'https://github.com/withastro/astro',
+            copyright: 'Copyright (c) 2021 Fred K. Schott',
+            license: 'MIT License',
+        },
+        {
+            name: 'Autosize',
+            url: 'https://github.com/jackmoore/autosize',
+            copyright: 'Copyright (c) 2015 Jack Moore',
+            license: 'MIT License',
+        },
+        {
+            name: 'canvas-confetti',
+            url: 'https://github.com/catdad/canvas-confetti',
+            copyright: 'Copyright (c) 2020, Kiril Vatev',
+            license: 'ISC License',
+        },
+        {
+            name: 'gridjs',
+            url: 'https://github.com/grid-js/gridjs',
+            copyright: 'Copyright (c) Afshin Mehrabani <afshin.meh@gmail.com>',
+            license: 'MIT License',
+        },
+        {
+            name: 'socket.io',
+            url: 'https://github.com/socketio/socket.io',
+            copyright: 'Copyright (c) 2014-2018 Automattic <dev@cloudup.com>',
+            license: 'MIT License',
+        },
+        {
+            name: 'validator.js',
+            url: 'https://github.com/validatorjs/validator.js',
+            copyright: "Copyright (c) 2018 Chris O'Hara <cohara87@gmail.com>",
+            license: 'MIT License',
+        },
+        {
+            name: 'chalk',
+            url: 'https://github.com/chalk/chalk',
+            copyright: 'Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)',
+            license: 'MIT License',
+        },
+        {
+            name: 'commander.js',
+            url: 'https://github.com/tj/commander.js',
+            copyright: 'Copyright (c) 2011 TJ Holowaychuk <tj@vision-media.ca>',
+            license: 'MIT License',
+        },
+        {
+            name: 'esbuild',
+            url: 'https://github.com/evanw/esbuild',
+            copyright: 'Copyright (c) 2020 Evan Wallace',
+            license: 'MIT License',
+        },
+        {
+            name: 'eslint',
+            url: 'https://github.com/eslint/eslint',
+            copyright: 'Copyright OpenJS Foundation and other contributors, <www.openjsf.org>',
+            license: 'MIT License',
+        },
+        {
+            name: 'Inquirer.js',
+            url: 'https://github.com/SBoudrias/Inquirer.js',
+            copyright: 'Copyright (c) 2023 Simon Boudrias',
+            license: 'MIT License',
+        },
+        {
+            name: 'node-fetch',
+            url: 'https://github.com/node-fetch/node-fetch',
+            copyright: 'Copyright (c) 2016 - 2020 Node Fetch Team',
+            license: 'MIT License',
+        },
+        {
+            name: 'pkg',
+            url: 'https://github.com/vercel/pkg',
+            copyright: 'Copyright (c) 2021 Vercel, Inc.',
+            license: 'MIT License',
+        },
+        {
+            name: 'TypeScript',
+            url: 'https://github.com/microsoft/TypeScript',
+            copyright: 'Copyright (c) 2012-2023 Microsoft',
+            license: 'Apache License 2.0',
+        },
+    ];
+
+    licenses.sort((a, b) => a.name.localeCompare(b.name));
+
+    onPageLoad(() => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const licensesList = document.getElementById('licenses-list')!;
+        for (const license of licenses) {
+            licensesList.innerHTML += `
+            <div class="list-group-item">
+                <div class="text-truncate">
+                    <a href="${license.url}" target="_blank" rel="noopener noreferrer" class="text-reset d-block fw-bold">${license.name}</a>
+                    <div class="text-muted text-truncate mt-n1">${license.copyright}<br>License: ${license.license}</div>
+                </div>
+            </div>
+        `;
+        }
+    });
+</script>

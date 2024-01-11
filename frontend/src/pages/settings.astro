@@ -1,0 +1,784 @@
+---
+import PageHeader from '@components/PageHeader.astro';
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout>
+    <PageHeader title="Einstellungen" preTitle={import.meta.env.PUBLIC_APP_NAME} visible={true} />
+    <div class="page-body">
+        <div class="container-xl">
+            <div class="row row-deck row-cards">
+                <div class="col-12 col-lg-6">
+                    <div class="card card-md shadow-sm">
+                        <div class="card-stamp card-stamp-lg">
+                            <div class="card-stamp-icon bg-primary">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="icon icon-tabler icon-tabler-bell"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                    fill="none"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"></path>
+                                    <path d="M9 17v1a3 3 0 0 0 6 0v-1"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-10">
+                                    <h3 class="h2">Benachrichtigungen</h3>
+                                    <form id="notificationForm" class="mt-4" data-astro-reload>
+                                        <div class="mb-3 text-muted">
+                                            Wann möchten Sie eine Benachrichtigung an Ihre E-Mail-Adresse <span id="noti-email"></span> erhalten?
+                                        </div>
+                                        <h4 class="h4">SSL-Zertifikate</h4>
+                                        <div class="d-flex flex-row flex-wrap gap-3">
+                                            <label class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="noti-success" checked />
+                                                <span class="form-check-label">Erfolgreiche Erneuerung</span>
+                                            </label>
+                                            <label class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="noti-failed" checked />
+                                                <span class="form-check-label">Fehlgeschlagene Erneuerung</span>
+                                            </label>
+                                        </div>
+                                        <hr class="mt-2 mb-3" />
+                                        <h4 class="h4">Server</h4>
+                                        <div class="d-flex flex-row flex-wrap gap-3">
+                                            <label class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="noti-offline" checked />
+                                                <span class="form-check-label">Offline</span>
+                                            </label>
+                                            <label class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="noti-update" checked />
+                                                <span class="form-check-label">Update verfügbar</span>
+                                            </label>
+                                            <label class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="noti-server-error" checked />
+                                                <span class="form-check-label">Fehler</span>
+                                            </label>
+                                        </div>
+                                        <hr class="mt-2 mb-4" />
+                                        <button type="submit" id="notificationSubmitBtn" class="btn btn-primary">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="icon icon-tabler icon-tabler-device-floppy"
+                                                width="24"
+                                                height="24"
+                                                viewBox="0 0 24 24"
+                                                stroke-width="2"
+                                                stroke="currentColor"
+                                                fill="none"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            >
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2"></path>
+                                                <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+                                                <path d="M14 4l0 4l-6 0l0 -4"></path>
+                                            </svg>
+                                             Speichern
+                                        </button>
+                                        <div id="notificationAlertContainer"></div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                    <div class="card card-md shadow-sm">
+                        <div class="card-stamp card-stamp-lg">
+                            <div class="card-stamp-icon bg-primary">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="icon icon-tabler icon-tabler-fingerprint"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                    fill="none"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M18.9 7a8 8 0 0 1 1.1 5v1a6 6 0 0 0 .8 3"></path>
+                                    <path d="M8 11a4 4 0 0 1 8 0v1a10 10 0 0 0 2 6"></path>
+                                    <path d="M12 11v2a14 14 0 0 0 2.5 8"></path>
+                                    <path d="M8 15a18 18 0 0 0 1.8 6"></path>
+                                    <path d="M4.9 19a22 22 0 0 1 -.9 -7v-1a8 8 0 0 1 12 -6.95"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-10">
+                                    <h3 class="h2">WebAuthn / Passkey</h3>
+                                    <div class="text-muted pe-3">
+                                        Melden Sie sich mit Ihrem Gerät (z.B. Windows Hello) oder einem Hardware-Sicherheitsschlüssel an.
+                                    </div>
+                                    <div class="mt-2">
+                                        <label class="form-label">Gerätename</label>
+                                        <input type="text" class="form-control" placeholder="Name eingeben" maxlength="22" id="webAuthnDeviceName" />
+                                    </div>
+                                    <button type="button" id="registerWebAuthnBtn" class="btn btn-primary mt-3">
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            class="icon icon-tabler icon-tabler-square-rounded-plus"
+                                            width="24"
+                                            height="24"
+                                            viewBox="0 0 24 24"
+                                            stroke-width="2"
+                                            stroke="currentColor"
+                                            fill="none"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                            <path d="M9 12h6"></path>
+                                            <path d="M12 9v6"></path>
+                                            <path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9 -9 9s-9 -1.8 -9 -9s1.8 -9 9 -9z"> </path>
+                                        </svg>
+                                         Gerät registrieren</button
+                                    >
+                                    <div class="alert alert-danger mt-3" id="webAuthnErrorAlert" style="display:none;"></div>
+                                    <div class="alert alert-success mt-3" id="webAuthnSuccessAlert" style="display:none;"></div>
+                                    <hr class="mt-3 mb-3" />
+                                    <h3 class="h2">Geräte</h3>
+                                    <div id="webAuthnDevices">Lade<span class="animated-dots"></span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                    <div class="card card-md shadow-sm">
+                        <div class="card-stamp card-stamp-lg">
+                            <div class="card-stamp-icon bg-warning">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="icon icon-tabler icon-tabler-lock"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                    fill="none"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <rect x="5" y="11" width="14" height="10" rx="2"></rect>
+                                    <circle cx="12" cy="16" r="1"></circle>
+                                    <path d="M8 11v-4a4 4 0 0 1 8 0v4"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-10">
+                                    <h3 class="h2">Passwort ändern</h3>
+                                    <form id="changePassForm" class="mt-4" data-astro-reload>
+                                        <div class="mb-3">
+                                            <label class="form-label required">Altes Passwort</label>
+                                            <input
+                                                type="password"
+                                                class="form-control"
+                                                placeholder="Geben Sie Ihr aktuelles Passwort ein"
+                                                id="oldPass"
+                                                required
+                                            />
+                                        </div>
+                                        <hr class="mt-3 mb-3" />
+                                        <div class="mb-3">
+                                            <label class="form-label required">Neues Passwort</label>
+                                            <input type="password" class="form-control" placeholder="Geben Sie Ihr neues Passwort ein" id="newPass" required />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label required">Passwort wiederholen</label>
+                                            <input
+                                                type="password"
+                                                class="form-control"
+                                                placeholder="Wiederholen Sie Ihr neues Passwort"
+                                                id="newPass2"
+                                                required
+                                            />
+                                        </div>
+                                        <button type="submit" class="btn btn-primary mt-2">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="icon icon-tabler icon-tabler-edit"
+                                                width="24"
+                                                height="24"
+                                                viewBox="0 0 24 24"
+                                                stroke-width="2"
+                                                stroke="currentColor"
+                                                fill="none"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            >
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"> </path>
+                                                <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"> </path>
+                                                <path d="M16 5l3 3"></path>
+                                            </svg>
+                                             Passwort ändern
+                                        </button>
+                                        <div class="alert alert-danger mt-3" id="passErrorAlert" style="display:none;"></div>
+                                        <div class="alert alert-success mt-3" id="passSuccessAlert" style="display:none;"></div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                    <div class="card card-md shadow-sm">
+                        <div class="card-stamp card-stamp-lg">
+                            <div class="card-stamp-icon bg-primary">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="icon icon-tabler icon-tabler-mail"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                    fill="none"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M3 5m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"> </path>
+                                    <path d="M3 7l9 6l9 -6"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-10">
+                                    <h3 class="h2">E-Mail Adresse ändern</h3>
+                                    <form id="changeEmailForm" class="mt-4" data-astro-reload>
+                                        <div class="mb-3">
+                                            <label class="form-label required">Passwort</label>
+                                            <input
+                                                type="password"
+                                                class="form-control"
+                                                placeholder="Geben Sie Ihr aktuelles Passwort ein"
+                                                id="passChangeEmail"
+                                                required
+                                            />
+                                        </div>
+                                        <hr class="mt-3 mb-3" />
+                                        <div class="mb-3">
+                                            <label class="form-label required">Neue E-Mail Adresse</label>
+                                            <input
+                                                type="email"
+                                                class="form-control"
+                                                placeholder="Geben Sie die neue E-Mail Adresse ein"
+                                                id="newEmail"
+                                                required
+                                            />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label required">Neue E-Mail Adresse wiederholen</label>
+                                            <input
+                                                type="email"
+                                                class="form-control"
+                                                placeholder="Wiederholen Sie Ihre neue E-Mail Adresse"
+                                                id="newEmail2"
+                                                required
+                                            />
+                                        </div>
+                                        <button type="submit" class="btn btn-primary mt-2">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="icon icon-tabler icon-tabler-edit"
+                                                width="24"
+                                                height="24"
+                                                viewBox="0 0 24 24"
+                                                stroke-width="2"
+                                                stroke="currentColor"
+                                                fill="none"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            >
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"> </path>
+                                                <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"> </path>
+                                                <path d="M16 5l3 3"></path>
+                                            </svg>
+                                             E-Mail Adresse ändern
+                                        </button>
+                                        <div class="alert alert-danger mt-3" id="emailErrorAlert" style="display:none;"></div>
+                                        <div class="alert alert-success mt-3" id="emailSuccessAlert" style="display:none;"></div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-lg-6">
+                    <div class="card card-md shadow-sm">
+                        <div class="card-stamp card-stamp-lg">
+                            <div class="card-stamp-icon bg-danger">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    class="icon icon-tabler icon-tabler-alert-triangle"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="2"
+                                    stroke="currentColor"
+                                    fill="none"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path
+                                        d="M10.24 3.957l-8.422 14.06a1.989 1.989 0 0 0 1.7 2.983h16.845a1.989 1.989 0 0 0 1.7 -2.983l-8.423 -14.06a1.989 1.989 0 0 0 -3.4 0z"
+                                    >
+                                    </path>
+                                    <path d="M12 9v4"></path>
+                                    <path d="M12 17h.01"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-10">
+                                    <h3 class="h2">Konto löschen</h3>
+                                    <form id="deleteAccountForm" class="mt-4" data-astro-reload>
+                                        <div class="mb-3">
+                                            Diese Aktion kann nicht rückgängig gemacht werden! Alle personenbezogenen Daten werden unwiederruflich gelöscht.
+                                        </div>
+                                        <hr class="mt-3 mb-3" />
+                                        <div class="mb-3">
+                                            <label class="form-label required"> Passwort</label>
+                                            <input
+                                                type="password"
+                                                class="form-control"
+                                                placeholder="Geben Sie Ihr aktuelles Passwort ein"
+                                                id="deleteAccountPass"
+                                                required
+                                            />
+                                        </div>
+                                        <button type="submit" class="btn btn-danger mt-2">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                class="icon icon-tabler icon-tabler-trash"
+                                                width="24"
+                                                height="24"
+                                                viewBox="0 0 24 24"
+                                                stroke-width="2"
+                                                stroke="currentColor"
+                                                fill="none"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            >
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                <path d="M4 7l16 0"></path>
+                                                <path d="M10 11l0 6"></path>
+                                                <path d="M14 11l0 6"></path>
+                                                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
+                                                <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
+                                            </svg>
+                                             Konto löschen
+                                        </button>
+                                        <div class="alert alert-danger mt-3" id="deleteAccountErrorAlert" style="display:none;"></div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal modal-blur fade" id="confirmModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-body text-center py-4">
+                    <!-- Download SVG icon from http://tabler-icons.io/i/alert-triangle -->
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="icon mb-2 text-danger icon-lg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        stroke-width="2"
+                        stroke="currentColor"
+                        fill="none"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                        <path d="M12 9v2m0 4v.01"></path>
+                        <path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75"></path>
+                    </svg>
+                    <h3>Sind Sie sicher?</h3>
+                    <div class="text-muted">Möchten Sie wirklich <span id="confirmModalAction"></span>?</div>
+                </div>
+                <div class="modal-footer">
+                    <div class="w-100">
+                        <div class="row">
+                            <div class="col"><a href="#" class="btn w-100" data-bs-dismiss="modal"> Abbrechen</a></div>
+                            <div class="col"><a href="#" class="btn btn-danger w-100" id="confirmModalBtn"> Fortfahren</a></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal modal-blur fade" id="successModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-body text-center py-4">
+                    <!-- Download SVG icon from http://tabler-icons.io/i/alert-triangle -->
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="icon mb-2 text-green icon-lg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        stroke-width="2"
+                        stroke="currentColor"
+                        fill="none"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <path d="M9 12l2 2l4 -4"></path>
+                    </svg>
+                    <h3>Aktion erfolgreich!</h3>
+                    <div class="text-muted" id="successModalTxt"></div>
+                </div>
+                <div class="modal-footer">
+                    <div class="w-100">
+                        <div class="row">
+                            <div class="col"><a href="#" class="btn btn-success w-100" data-bs-dismiss="modal"> Schließen</a></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</BaseLayout>
+
+<style></style>
+<script>
+    import { errorAlert, successAlert } from '@scripts/components';
+    import { onPageLoad } from '@scripts/router';
+    import { startRegistration as webAuthnStartRegistration } from '@simplewebauthn/browser';
+    import { navigate } from 'astro:transitions/client';
+
+    onPageLoad(async () => {
+        // @ts-ignore
+        const confirmModal = bootstrap.Modal.getOrCreateInstance('#confirmModal');
+        // @ts-ignore
+        const successModal = bootstrap.Modal.getOrCreateInstance('#successModal');
+
+        loadNotificationSettings();
+
+        document.getElementById('changePassForm')!.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const oldPass = (document.getElementById('oldPass')! as HTMLInputElement).value;
+            const newPass = (document.getElementById('newPass')! as HTMLInputElement).value;
+            const newPass2 = (document.getElementById('newPass2')! as HTMLInputElement).value;
+            const passErrorAlert = document.getElementById('passErrorAlert')!;
+            const passSuccessAlert = document.getElementById('passSuccessAlert')!;
+
+            passErrorAlert.style.display = 'none';
+            passSuccessAlert.style.display = 'none';
+
+            if (newPass !== newPass2) {
+                passErrorAlert.innerHTML = 'Die eingegebenen Passwörter stimmen nicht überein.';
+                passErrorAlert.style.display = 'block';
+                return;
+            }
+
+            if (oldPass === newPass) {
+                passErrorAlert.innerHTML = 'Das alte und das neue Passwort dürfen nicht identisch sein.';
+                passErrorAlert.style.display = 'block';
+                return;
+            }
+
+            const response = await fetch('/api/changePass', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    oldPass: oldPass,
+                    newPass: newPass,
+                }),
+            });
+            if (response.status === 200) {
+                passSuccessAlert.innerHTML = 'Ihr Passwort wurde erfolgreich geändert.';
+                passSuccessAlert.style.display = 'block';
+                return;
+            }
+            const text = await response.text();
+            passErrorAlert.innerHTML = text;
+            passErrorAlert.style.display = 'block';
+        });
+
+        document.getElementById('registerWebAuthnBtn')!.addEventListener('click', async () => {
+            const webAuthnErrorAlert = document.getElementById('webAuthnErrorAlert')!;
+            const webAuthnSuccessAlert = document.getElementById('webAuthnSuccessAlert')!;
+            const webAuthnDeviceName = document.getElementById('webAuthnDeviceName')! as HTMLInputElement;
+            webAuthnErrorAlert.style.display = 'none';
+            webAuthnSuccessAlert.style.display = 'none';
+
+            if (!webAuthnDeviceName.value.length) {
+                webAuthnErrorAlert.innerText = 'Bitte geben Sie einen Gerätenamen an';
+                webAuthnErrorAlert.style.display = 'block';
+                return;
+            }
+
+            const resp = await fetch('/api/webAuthn/getRegistrationOptions');
+
+            let attResp;
+            try {
+                attResp = await webAuthnStartRegistration(await resp.json());
+            } catch (error) {
+                //@ts-ignore
+                if (error.name === 'InvalidStateError') {
+                    webAuthnErrorAlert.innerText = 'Fehler: Authenticator wurde wahrscheinlich bereits registriert';
+                    webAuthnErrorAlert.style.display = 'block';
+                } else {
+                    webAuthnErrorAlert.innerText = error as string;
+                    webAuthnErrorAlert.style.display = 'block';
+                }
+                throw error;
+            }
+
+            const verificationResp = await fetch('/api/webAuthn/verifyRegistration?deviceName=' + webAuthnDeviceName.value, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(attResp),
+            });
+
+            const verificationJSON = await verificationResp.json();
+
+            if (verificationJSON && verificationJSON.verified) {
+                webAuthnSuccessAlert.innerText = 'Gerät erfolgreich registriert.';
+                webAuthnSuccessAlert.style.display = 'block';
+                buildWebAuthnDeviceTable(confirmModal);
+            } else {
+                webAuthnErrorAlert.innerHTML = `Es ist ein Fehler aufgetreten: <pre>${JSON.stringify(verificationJSON)}</pre>`;
+                webAuthnErrorAlert.style.display = 'block';
+            }
+        });
+
+        buildWebAuthnDeviceTable(confirmModal);
+
+        document.getElementById('notificationForm')!.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const successSwitch = document.getElementById('noti-success')! as HTMLInputElement;
+            const failed = document.getElementById('noti-failed')! as HTMLInputElement;
+            const offlineSwitch = document.getElementById('noti-offline')! as HTMLInputElement;
+            const updateSwitch = document.getElementById('noti-update')! as HTMLInputElement;
+            const serverErrorSwitch = document.getElementById('noti-server-error')! as HTMLInputElement;
+            const notificationAlertContainer = document.getElementById('notificationAlertContainer')!;
+            notificationAlertContainer.innerHTML = '';
+            const submitBtn = document.getElementById('notificationSubmitBtn')! as HTMLButtonElement;
+
+            submitBtn.disabled = true;
+            const resp = await fetch('/api/notificationSettings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    successfullCertRequest: successSwitch.checked,
+                    failedCertRequest: failed.checked,
+                    serverOffline: offlineSwitch.checked,
+                    updateAvailable: updateSwitch.checked,
+                    serverError: serverErrorSwitch.checked,
+                }),
+            });
+            submitBtn.disabled = false;
+            if (resp.status !== 200) {
+                notificationAlertContainer.innerHTML = errorAlert('Error: ' + (await resp.text()));
+                return;
+            }
+            notificationAlertContainer.innerHTML = successAlert('Einstellungen erfolgreich gespeichert.');
+        });
+
+        document.getElementById('confirmModalBtn')!.addEventListener('click', async (e) => {
+            confirmModal.hide();
+            if ((e.target! as HTMLElement).dataset.action === 'removeWebAuthnDevice') {
+                const resp = await fetch('/api/webAuthn/removeDevice', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        id: (e.target! as HTMLElement).dataset.id,
+                    }),
+                });
+                if (resp.status === 200) {
+                    document.getElementById('successModalTxt')!.innerText = `Das WebAuthn Gerät "${
+                        (e.target! as HTMLElement).dataset.name
+                    }" wurde erfolgreich aus Ihrem Konto gelöscht.`;
+                    successModal.show();
+                    buildWebAuthnDeviceTable(confirmModal);
+                    return;
+                }
+                const text = await resp.text();
+                alert('Error: ' + text);
+            }
+        });
+
+        document.getElementById('changeEmailForm')!.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const pass = (document.getElementById('passChangeEmail')! as HTMLInputElement).value;
+            const newEmail = (document.getElementById('newEmail')! as HTMLInputElement).value;
+            const newEmail2 = (document.getElementById('newEmail2')! as HTMLInputElement).value;
+            const emailErrorAlert = document.getElementById('emailErrorAlert')!;
+            const emailSuccessAlert = document.getElementById('emailSuccessAlert')!;
+
+            emailErrorAlert.style.display = 'none';
+            emailSuccessAlert.style.display = 'none';
+
+            if (newEmail !== newEmail2) {
+                emailErrorAlert.innerHTML = 'Die eingegebenen E-Mail Adressen stimmen nicht überein.';
+                emailErrorAlert.style.display = 'block';
+                return;
+            }
+
+            const response = await fetch('/api/changeEmail', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    pass: pass,
+                    newEmail: newEmail,
+                }),
+            });
+            if (response.status === 200) {
+                emailSuccessAlert.innerHTML =
+                    'Sie erhalten nun eine Bestätigungs-E-Mail an Ihre neue E-Mail-Adresse. Bitte klicken Sie auf den Link in dieser E-Mail, um die Änderung abzuschließen';
+                emailSuccessAlert.style.display = 'block';
+                return;
+            }
+            const text = await response.text();
+            emailErrorAlert.innerHTML = text;
+            emailErrorAlert.style.display = 'block';
+        });
+
+        document.getElementById('deleteAccountForm')!.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const pass = (document.getElementById('deleteAccountPass')! as HTMLInputElement).value;
+            const deleteAccountErrorAlert = document.getElementById('deleteAccountErrorAlert')!;
+
+            deleteAccountErrorAlert.style.display = 'none';
+
+            const response = await fetch('/api/deleteAccount', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    pass: pass,
+                }),
+            });
+            if (response.status === 200) {
+                navigate('/api/logout');
+                return;
+            }
+            const text = await response.text();
+            deleteAccountErrorAlert.innerText = text;
+            deleteAccountErrorAlert.style.display = 'block';
+        });
+    });
+
+    async function buildWebAuthnDeviceTable(confirmModal: bootstrap.Modal) {
+        const response = await fetch('/api/webAuthn/getAuthenticators');
+        if (response.status === 200) {
+            const json = await response.json();
+            let html = `<div class="table-responsive">
+                        <table class="table table-vcenter card-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Verwendungen</th>
+                                    <th>Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+            json.forEach((device: { name: string; counter: string; _id: string }) => {
+                html += `<tr>
+                                <td>${device.name}</td>
+                                <td class="text-muted">${device.counter}</td>
+                                <td><button type="button" class="btn btn-outline-danger removeWebAuthnBtn" data-name="${device.name}" data-id="${device._id}">Löschen</a></td>
+                            </tr>`;
+            });
+            if (json.length === 0) {
+                html += '<td colspan="3">Keine Geräte vorhanden.</td>';
+            }
+
+            html += '</tbody></table></div>';
+            document.getElementById('webAuthnDevices')!.innerHTML = html;
+
+            document.querySelectorAll('.removeWebAuthnBtn').forEach((element) => {
+                element.addEventListener('click', (e) => {
+                    if (!(e.target! as HTMLElement).dataset.id) {
+                        return;
+                    }
+                    const confirmModalBtn = document.getElementById('confirmModalBtn')!;
+                    confirmModalBtn.dataset.action = 'removeWebAuthnDevice';
+                    confirmModalBtn.dataset.id = (e.target! as HTMLElement).dataset.id;
+                    confirmModalBtn.dataset.name = (e.target! as HTMLElement).dataset.name;
+                    document.getElementById('confirmModalAction')!.innerHTML = `das WebAuthn Gerät "${(e.target! as HTMLElement).dataset.name}" entfernen`;
+                    confirmModal.show();
+                });
+            });
+            return;
+        }
+        const text = await response.text();
+        document.getElementById('webAuthnDevices')!.innerText = 'Error: ' + text;
+    }
+
+    async function loadNotificationSettings() {
+        const notificationAlertContainer = document.getElementById('notificationAlertContainer')!;
+        const resp = await fetch('/api/notificationSettings');
+        if (resp.status !== 200) {
+            notificationAlertContainer.innerHTML = errorAlert('Error: ' + (await resp.text()));
+            return;
+        }
+        const json = await resp.json();
+        notificationAlertContainer.innerHTML = '';
+        const successSwitch = document.getElementById('noti-success')! as HTMLInputElement;
+        const failed = document.getElementById('noti-failed')! as HTMLInputElement;
+        const offlineSwitch = document.getElementById('noti-offline')! as HTMLInputElement;
+        const updateSwitch = document.getElementById('noti-update')! as HTMLInputElement;
+        const serverErrorSwitch = document.getElementById('noti-server-error')! as HTMLInputElement;
+
+        successSwitch.checked = json.successfullCertRequest;
+        failed.checked = json.failedCertRequest;
+        offlineSwitch.checked = json.serverOffline;
+        updateSwitch.checked = json.updateAvailable;
+        serverErrorSwitch.checked = json.serverError;
+    }
+</script>

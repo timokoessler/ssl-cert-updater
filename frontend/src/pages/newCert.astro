@@ -1,0 +1,414 @@
+---
+import PageHeader from '@components/PageHeader.astro';
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout>
+    <PageHeader title="Zertifikat erstellen" preTitle={import.meta.env.PUBLIC_APP_NAME} visible={true} />
+    <div class="page-body mt-2">
+        <div class="container-xl">
+            <div class="row mt-3">
+                <div class="col-lg-6 mt-4 mt-lg-0">
+                    <div class="card shadow">
+                        <div class="card-body pe-2 py-4" id="card-body">
+                            <div id="container">
+                                <label class="h2">Zertifikatstyp auswählen</label>
+                                <hr class="mt-0 mb-3" />
+                                <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
+                                    <label class="form-selectgroup-item flex-fill">
+                                        <input type="radio" name="radio-cert-type" value="le" class="form-selectgroup-input" checked />
+                                        <div class="form-selectgroup-label d-flex align-items-center p-3">
+                                            <div class="me-3">
+                                                <span class="form-selectgroup-check"></span>
+                                            </div>
+                                            <div>Let's Encrypt <span class="badge text-bg-success ms-2">Standard</span></div>
+                                        </div>
+                                    </label>
+                                    <label class="form-selectgroup-item flex-fill text-secondary" style="cursor:none;">
+                                        <input type="radio" name="radio-cert-type" value="custom" class="form-selectgroup-input" disabled />
+                                        <div class="form-selectgroup-label d-flex align-items-center p-3">
+                                            <div class="me-3">
+                                                <span class="form-selectgroup-check"></span>
+                                            </div>
+                                            <div>Eigenes Zertifikat <span class="badge ms-2">Nicht verfügbar</span></div>
+                                        </div>
+                                    </label>
+                                </div>
+                                <button class="btn btn-primary mt-3 d-inline" id="nextBtn"
+                                    ><i class="ti ti-square-rounded-arrow-right-filled me-1"></i> Weiter</button
+                                >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 mt-3 mt-lg-0"></div>
+            </div>
+        </div>
+    </div>
+    <div class="modal modal-blur fade" id="running-modal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Aktuelle Zertifikatsanfragen</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button>
+                </div>
+                <div class="modal-body" id="running-modal-body"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn me-auto" data-bs-dismiss="modal">Neues Zertifikat erstellen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</BaseLayout>
+
+<style></style>
+<script>
+    import { capitalizeFirstLetter } from '@scripts/utils';
+    import { errorAlert, cardLoading, listGroupItem } from '@scripts/components';
+    import isFQDN from 'validator/es/lib/isFQDN';
+    import autosize from 'autosize';
+    import confetti from 'canvas-confetti';
+    import { getWS } from '@scripts/socket';
+    import { onFirstPageLoad, onPageLoad } from '@scripts/router';
+    import { navigate } from 'astro:transitions/client';
+
+    const selectGroup = (name: string, value: string, content: string, checked: boolean) => `<label class="form-selectgroup-item flex-fill">
+    <input type="radio" name="${name}" value="${value}" class="form-selectgroup-input" ${checked ? 'checked' : ''}>
+    <div class="form-selectgroup-label d-flex align-items-center p-3">
+        <div class="me-3">
+            <span class="form-selectgroup-check"></span>
+        </div>
+        <div>${content}</div>
+    </div>
+    </label>`;
+
+    let leAccountID: string;
+    let dnsProviderID: string;
+
+    const socket = getWS();
+    const isPageActive = () => window.location.pathname === '/newCert';
+
+    let certRequestID: string;
+
+    // Page load
+    onPageLoad(() => {
+        const container = document.getElementById('container')!;
+        document.getElementById('nextBtn')?.addEventListener('click', async () => {
+            const certType = (document.querySelector('input[name="radio-cert-type"]:checked') as HTMLInputElement).value;
+            if (certType === 'custom') {
+                container.innerHTML = errorAlert('Diese Funktion ist noch nicht verfügbar');
+                return;
+            }
+            container.innerHTML = cardLoading("Lade Let's Encrypt Konten");
+            socket.emit('getLetsEncryptAccounts', async (accounts: LetsEncryptAccount[]) => {
+                if (!isPageActive()) return;
+                if (!Array.isArray(accounts)) {
+                    container.innerHTML = errorAlert("Fehler beim Laden der Let's Encrypt Konten");
+                    return;
+                }
+                if (accounts.length === 0) {
+                    newLEAccount();
+                    return;
+                }
+                accounts.push({
+                    _id: 'new',
+                    email: 'Neues Konto erstellen',
+                    createdAt: 0,
+                });
+                container.innerHTML = `<label class="h2">Let's Encrypt Konto auswählen</label>
+                <hr class="mt-0 mb-3">
+                <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
+                    ${accounts.map((account, index) => selectGroup('radio-le-account', account._id, account.email, index === 0)).join('')}
+                </div>
+                <button class="btn btn-primary mt-3 d-inline" id="nextBtn"><i class="ti ti-square-rounded-arrow-right-filled me-1"></i> Weiter</button>`;
+
+                document.getElementById('nextBtn')?.addEventListener('click', async () => {
+                    const accountID = (document.querySelector('input[name="radio-le-account"]:checked') as HTMLInputElement).value;
+                    if (accountID === 'new') {
+                        newLEAccount();
+                        return;
+                    }
+                    leAccountID = accountID;
+                    selectDNSProvider();
+                });
+            });
+        });
+        socket.emit('getRunningCertRequests', (requests: RunningCertRequest[]) => {
+            if (!isPageActive()) return;
+            if (!Array.isArray(requests)) return;
+            if (requests.length > 0) {
+                // @ts-ignore
+                const runningModal = bootstrap.Modal.getOrCreateInstance('#running-modal');
+                const runningModalBody = document.getElementById('running-modal-body')!;
+                runningModalBody.innerHTML = `<div class="mb-3">Aktuell ${
+                    requests.length === 1 ? 'wird ein Zertifikat erstellt' : 'werden ' + requests.length + ' Zertifikate erstellt'
+                }.</div>`;
+                runningModalBody.innerHTML += `<hr class="mt-1 mb-3"><div class="list-group list-group-flush list-group-hoverable">`;
+                for (const request of requests) {
+                    runningModalBody.innerHTML += listGroupItem(
+                        request.altNames.join(', '),
+                        `Gestartet: ${new Date(request.startedAt).toLocaleString()}`,
+                        request._id,
+                        'ti ti-certificate text-primary',
+                    );
+                }
+                runningModalBody.innerHTML += `</div>`;
+                runningModal.show();
+
+                for (const item of document.querySelectorAll<HTMLElement>('.list-group-item-link')) {
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        runningModal.hide();
+                        if (!item.dataset.id) return;
+                        certRequestID = item.dataset.id;
+                        certRequestPending(true);
+                    });
+                }
+            }
+        });
+    });
+
+    socket.io.on('reconnect', () => {
+        if (isPageActive() && certRequestID) {
+            window.location.reload();
+        }
+    });
+
+    function newLEAccount() {
+        const container = document.getElementById('container')!;
+        container.innerHTML = `<label class="h2">Let's Encrypt Konto erstellen</label>
+    <hr class="mt-0 mb-3">
+    <input type="email" class="form-control" id="leAccountEmail" placeholder="E-Mail Adresse eingeben" required>
+    <div class="mt-1"><small>Sie erhalten eine E-Mail von Let's Encrypt, wenn ein Zertifikat bald abläuft.</small></div>
+    <button class="btn btn-primary mt-3 d-inline" id="nextBtn"><i class="ti ti-square-rounded-arrow-right-filled me-1"></i> Weiter</button>`;
+        document.getElementById('nextBtn')?.addEventListener('click', async () => {
+            const emailInput = document.getElementById('leAccountEmail') as HTMLInputElement;
+            emailInput.classList.remove('is-invalid');
+            if (!emailInput.value.length || !emailInput.checkValidity()) {
+                emailInput.classList.add('is-invalid');
+                return;
+            }
+            container.innerHTML = cardLoading("Erstelle Let's Encrypt Konto");
+            socket.emit('createLetsEncryptAccount', emailInput.value, async (success: boolean, data: string) => {
+                if (!isPageActive()) return;
+                if (!success) {
+                    container.innerHTML = errorAlert(`Fehler beim Erstellen des Let's Encrypt Kontos: ${data}`);
+                    return;
+                }
+                leAccountID = data;
+                selectDNSProvider();
+            });
+        });
+    }
+
+    function selectDNSProvider() {
+        const container = document.getElementById('container')!;
+        container.innerHTML = cardLoading('Lade DNS Provider');
+        socket.emit('getDNSProviders', async (providers: DNSProvider[]) => {
+            if (!isPageActive()) return;
+            if (!Array.isArray(providers)) {
+                container.innerHTML = errorAlert('Fehler beim Laden der DNS Provider');
+                return;
+            }
+            if (providers.length === 0) {
+                newDNSProvider();
+                return;
+            }
+            providers.push({
+                _id: 'new',
+                type: 'netcup',
+                customerNumber: 'Neuen DNS-Provider hinzufügen',
+                createdAt: 0,
+            });
+            container.innerHTML = `<label class="h2">DNS Provider auswählen</label>
+            <hr class="mt-0 mb-3">
+            <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
+                ${providers
+                    .map((provider, index) =>
+                        selectGroup('radio-dns-provider', provider._id, `${capitalizeFirstLetter(provider.type)}: ${provider.customerNumber}`, index === 0),
+                    )
+                    .join('')}
+            </div>
+            <div class="mt-2"><small>Bitte beachten Sie, dass die Domain, für die Sie ein Zertifikat erstellen möchten, bei dem ausgewählten DNS Provider in diesem Konto vorhanden sein muss.</small></div>
+            <button class="btn btn-primary mt-3 d-inline" id="nextBtn"><i class="ti ti-square-rounded-arrow-right-filled me-1"></i> Weiter</button>`;
+
+            document.getElementById('nextBtn')?.addEventListener('click', async () => {
+                const providerID = (document.querySelector('input[name="radio-dns-provider"]:checked') as HTMLInputElement).value;
+                if (providerID === 'new') {
+                    newDNSProvider();
+                    return;
+                }
+                dnsProviderID = providerID;
+                selectDomain();
+            });
+        });
+    }
+
+    function newDNSProvider() {
+        const container = document.getElementById('container')!;
+        container.innerHTML = `<div class="h2">DNS-Provider hinzufügen</div>
+        <hr class="mt-0 mb-3">
+        <div class="mb-3">
+            <div class="form-label required">Anbieter</div>
+            <select class="form-select" disabled>
+                <option value="netcup">Netcup</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <div class="form-label required">Kunden-Nummer</div>
+            <input type="text" class="form-control" id="dnsCustomerNr" placeholder="Kundennummer eingeben" required>
+        </div>
+        <div class="mb-3">
+            <div class="form-label required">API-Key</div>
+            <input type="password" class="form-control" id="dnsApiKey" placeholder="API-Key einfügen" required>
+        </div>
+        <div class="mb-3">
+            <div class="form-label required">API-Passwort</div>
+            <input type="password" class="form-control" id="dnsApiPass" placeholder="API-Passwort einfügen" required>
+        </div>
+        <button class="btn btn-primary mt-3 d-inline" id="nextBtn"><i class="ti ti-square-rounded-arrow-right-filled me-1"></i> Weiter</button>`;
+        document.getElementById('nextBtn')?.addEventListener('click', async () => {
+            const customerNrInput = document.getElementById('dnsCustomerNr') as HTMLInputElement;
+            const apiKeyInput = document.getElementById('dnsApiKey') as HTMLInputElement;
+            const apiPassInput = document.getElementById('dnsApiPass') as HTMLInputElement;
+            customerNrInput.classList.remove('is-invalid');
+            apiKeyInput.classList.remove('is-invalid');
+            apiPassInput.classList.remove('is-invalid');
+            if (!customerNrInput.value.length) {
+                customerNrInput.classList.add('is-invalid');
+                return;
+            }
+            if (!apiKeyInput.value.length) {
+                apiKeyInput.classList.add('is-invalid');
+                return;
+            }
+            if (!apiPassInput.value.length) {
+                apiPassInput.classList.add('is-invalid');
+                return;
+            }
+            container.innerHTML = cardLoading('Erstelle DNS-Provider');
+            socket.emit(
+                'createDNSProvider',
+                {
+                    type: 'netcup',
+                    customerNumber: customerNrInput.value,
+                    apiKey: apiKeyInput.value,
+                    apiPassword: apiPassInput.value,
+                },
+                async (success: boolean, data: string) => {
+                    if (!isPageActive()) return;
+                    if (!success) {
+                        container.innerHTML = errorAlert(`Fehler beim Erstellen des DNS-Providers: ${data}`);
+                        return;
+                    }
+                    dnsProviderID = data;
+                    selectDomain();
+                },
+            );
+        });
+    }
+
+    function selectDomain() {
+        const container = document.getElementById('container')!;
+        container.innerHTML = `<div class="h2">Domain & Subdomains</div>
+    <hr class="mt-0 mb-3">
+    <div class="mb-3">Geben Sie alle Domains und Subdomains an, für die Sie ein Zertifikat erstellen möchten. Sie können auch Wildcard-Domains verwenden, indem Sie ein * verwenden.</div>
+    <div class="mb-3">
+        <label class="form-label required">Domains des SSL-Zertifikats</label>
+        <textarea class="form-control" placeholder="example.com,*.example.com"></textarea>
+        <div class="mt-1"><small>Trenne die Domains mit Zeilenumbrüchen, Leerzeichen oder Kommas.</small></div>
+    </div>
+    <div id="errorContainer" style="display:none;"></div>
+    <button class="btn btn-danger mt-2 d-inline" id="nextBtn"><i class="ti ti-square-rounded-arrow-right-filled me-1"></i> Weiter</button>`;
+        autosize(document.querySelector('textarea') as HTMLTextAreaElement);
+        document.getElementById('nextBtn')?.addEventListener('click', async () => {
+            const domainsInput = document.querySelector('textarea') as HTMLTextAreaElement;
+            const errorContainer = document.getElementById('errorContainer')!;
+            domainsInput.classList.remove('is-invalid');
+            errorContainer.style.display = 'none';
+            const domains = domainsInput.value.split(/[\s,;]+/);
+            if (domains.length === 0) {
+                domainsInput.classList.add('is-invalid');
+                errorContainer.innerHTML = errorAlert('Bitte geben Sie mindestens eine Domain an.');
+                errorContainer.style.display = 'block';
+                return;
+            }
+            for (const domain of domains) {
+                if (
+                    !isFQDN(domain, {
+                        require_tld: true,
+                        allow_underscores: false,
+                        allow_trailing_dot: false,
+                        allow_wildcard: true,
+                    })
+                ) {
+                    domainsInput.classList.add('is-invalid');
+                    errorContainer.innerHTML = errorAlert(`Ungültige Domain: ${domain}`);
+                    errorContainer.style.display = 'block';
+                    return;
+                }
+            }
+
+            container.innerHTML = cardLoading('Kontaktiere Server');
+            socket.emit('requestLetsEncryptCert', leAccountID, domains, dnsProviderID, async (success: boolean, errorMsg: string, id: string) => {
+                if (!isPageActive()) return;
+                if (!success) {
+                    container.innerHTML = errorAlert(`Fehler beim Erstellen des Zertifikats: ${errorMsg}`);
+                    return;
+                }
+                certRequestID = id;
+                certRequestPending();
+            });
+        });
+    }
+
+    function certRequestPending(loadOldLogs = false) {
+        const container = document.getElementById('container')!;
+        container.innerHTML = cardLoading('Zertifikat wird erstellt');
+        container.innerHTML += '<hr class="mt-3 mb-3"><h4>Logs</h4><div class="mb-3"><pre id="logContainer"></pre></div>';
+        const logContainer = document.getElementById('logContainer')!;
+        socket.on('certRequestStatus', (certID: string, success: boolean, errorMsg?: string) => {
+            if (!isPageActive()) return;
+            if (certID !== certRequestID) return;
+            if (!success) {
+                container.innerHTML =
+                    errorAlert(`Fehler beim Erstellen des Zertifikats: ${errorMsg}`) +
+                    `<hr class="mt-3 mb-3"><h4>Logs</h4><div class="mb-3"><pre id="logContainer">${
+                        document.getElementById('logContainer')?.innerHTML
+                    }</pre></div>`;
+                return;
+            }
+            container.innerHTML = `<div class="alert alert-success mt-3 mb-3">Das Zertifikat wurde erfolgreich erstellt. 🥳</div>
+        <button class="btn btn-success mt-2 d-inline" id="nextBtn"><i class="ti ti-square-rounded-arrow-right-filled me-1"></i>Zur Startseite</button>
+        <hr class="mt-3 mb-3"><h4>Logs</h4><div class="mb-3"><pre id="logContainer">${document.getElementById('logContainer')?.innerHTML}</pre></div>`;
+            document.getElementById('nextBtn')?.addEventListener('click', async () => {
+                navigate('/');
+            });
+            confetti();
+        });
+        if (loadOldLogs) {
+            socket.emit('getCertRequestLogs', certRequestID, (logs: CertRequestLog[]) => {
+                if (!isPageActive()) return;
+                for (const log of logs) {
+                    logContainer.innerHTML += logToString(log);
+                }
+            });
+        }
+    }
+
+    socket.on('certRequestLog', (log: CertRequestLog) => {
+        if (!isPageActive()) return;
+        if (log.certID !== certRequestID) return;
+        const logContainer = document.getElementById('logContainer')!;
+        if (!logContainer) return;
+        logContainer.innerHTML += logToString(log);
+    });
+
+    function logToString(log: CertRequestLog) {
+        log.content = log.content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        log.content = log.content.replace(/\n/g, '<br>');
+        return `<span class="${log.logLevel === 'error' ? 'text-danger' : log.logLevel === 'warn' ? 'text-warning' : ''}">${new Date(
+            log.createdAt,
+        ).toLocaleString()}: ${log.logLevel} - ${log.content}</span><br>`;
+    }
+</script>

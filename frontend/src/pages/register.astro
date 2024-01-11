@@ -1,0 +1,123 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout pageType={'auth'}>
+    <div class="card card-md shadow">
+        <div class="card-body">
+            <h2 class="h2 text-center mb-4">Neues Konto erstellen</h2>
+            <form id="registerForm" data-astro-reload>
+                <div class="mb-3">
+                    <label class="form-label">E-Mail Adresse</label>
+                    <input type="email" class="form-control" placeholder="Geben Sie Ihre E-Mail Adresse ein" id="email" autocomplete="email" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Ihr Name / Firmenname</label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        placeholder="Bitte geben Sie Ihren vollständigen Namen ein"
+                        id="fullName"
+                        autocomplete="name"
+                        required
+                    />
+                </div>
+                <hr class="mt-1 mb-3" />
+                <div class="mb-3">
+                    <label class="form-label"> Passwort</label>
+                    <input type="password" class="form-control" placeholder="Wählen Sie ein sicheres Passwort" minlength="8" id="password" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label"> Passwort wiederholen</label>
+                    <input type="password" class="form-control" placeholder="Bitte wiederholen Sie Ihr Passwort" minlength="8" id="password2" required />
+                </div>
+                <div class="mb-0">
+                    <label class="form-check">
+                        <input type="checkbox" class="form-check-input" id="privacyPolicy" required />
+                        <span class="form-check-label"
+                            >Ich akzeptiere die <a href={`${import.meta.env.FOOTER_URL || ''}/datenschutz`}>Datenschutzbestimmungen</a></span
+                        >
+                    </label>
+                </div>
+                <div class="form-footer">
+                    <button type="submit" class="btn btn-primary w-100 shadow">Konto erstellen</button>
+                </div>
+                <div id="alertContainer"></div>
+            </form>
+        </div>
+    </div>
+    <div class="text-center text-muted mt-4">
+        Haben Sie bereits ein Konto? <a href="/login" tabindex="-1">Anmelden</a>
+    </div>
+</BaseLayout>
+
+<style></style>
+
+<script>
+    import { errorAlert, successAlert } from '@scripts/components';
+    import { onPageLoad } from '@scripts/router';
+
+    async function checkToken(token: string) {
+        const result = await fetch('/api/register/check-token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token }),
+        });
+        if (result.status !== 200) {
+            const registerForm = document.getElementById('registerForm')!;
+            registerForm.innerHTML = errorAlert('Der verwendete Link ist ungültig');
+        }
+    }
+
+    onPageLoad(() => {
+        const emailInput = document.getElementById('email')! as HTMLInputElement;
+        const fullName = document.getElementById('fullName')! as HTMLInputElement;
+        const password = document.getElementById('password')! as HTMLInputElement;
+        const password2 = document.getElementById('password2')! as HTMLInputElement;
+        const alertContainer = document.getElementById('alertContainer')!;
+        const registerForm = document.getElementById('registerForm')!;
+
+        if (window.location.pathname.split('/').length !== 3) {
+            registerForm.innerHTML = errorAlert('Der verwendete Link ist ungültig');
+            return;
+        }
+
+        const token = window.location.pathname.split('/')[2];
+        checkToken(token);
+
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        emailInput.disabled = true;
+        emailInput.value = payload.email;
+
+        registerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            alertContainer.innerHTML = '';
+            if (password.value !== password2.value) {
+                alertContainer.innerHTML = errorAlert('Die Passwörter stimmen nicht überein');
+                return;
+            }
+
+            fetch('/api/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    fullName: fullName.value,
+                    password: password.value,
+                    token,
+                }),
+            }).then((response) => {
+                response.text().then((text) => {
+                    if (response.status === 200) {
+                        alertContainer.innerHTML = successAlert(text);
+                        return;
+                    }
+                    alertContainer.innerHTML = errorAlert(text);
+                });
+            });
+        });
+    });
+</script>

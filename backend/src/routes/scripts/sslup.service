@@ -1,0 +1,15 @@
+[Unit]
+Description=A tool to automatically deploy SSL certificates on multiple servers
+After=network-online.target
+
+[Service]
+WorkingDirectory=/etc/sslup
+ExecStart=/usr/bin/sslup run
+Restart=always
+RestartSec=3
+TimeoutSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
+Alias=ssl-cert-updater.service

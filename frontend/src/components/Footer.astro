@@ -1,0 +1,32 @@
+---
+
+---
+
+<footer class="footer footer-transparent">
+    <div class="container-xl">
+        <div class="row text-center align-items-center flex-row-reverse">
+            <div class="col-lg-auto ms-lg-auto">
+                <ul class="list-inline list-inline-dots mb-0">
+                    <li class="list-inline-item">
+                        <a href={`${import.meta.env.FOOTER_URL || ''}/imprint`} class="link-secondary" target="_blank" rel="noopener">Impressum</a>
+                    </li>
+                    <li class="list-inline-item">
+                        <a href={`${import.meta.env.FOOTER_URL || ''}/privacy`} class="link-secondary">Datenschutz</a>
+                    </li>
+                    <li class="list-inline-item"><a href="/licenses" class="link-secondary" rel="prefetch-intent">Lizenzen</a></li>
+                </ul>
+            </div>
+            <div class="col-12 col-lg-auto mt-3 mt-lg-0">
+                <ul class="list-inline list-inline-dots mb-0">
+                    <li class="list-inline-item">
+                        Copyright &copy; {new Date().getFullYear()}&nbsp;
+                        <a href={import.meta.env.FOOTER_URL || ''} target="_blank" rel="noopener" class="link-secondary"
+                            >{import.meta.env.COPYRIGHT || 'Timo Kössler'}</a
+                        >
+                    </li>
+                    <li class="list-inline-item" id="versionTxt">{import.meta.env.VERSION || '0.0.0'}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</footer>

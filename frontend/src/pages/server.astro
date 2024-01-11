@@ -1,0 +1,627 @@
+---
+import PageHeader from '@components/PageHeader.astro';
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout>
+    <PageHeader title="Server bearbeiten" preTitle={import.meta.env.PUBLIC_APP_NAME} visible={false} />
+    <div class="page-body">
+        <div class="container-xl" id="container">
+            <div class="center-loading text-center">
+                <div class="mb-3 d-none d-lg-block">
+                    <div class="navbar-brand navbar-brand-autodark">
+                        <img src="/img/logo.svg" height="100" alt={import.meta.env.PUBLIC_APP_NAME} />
+                    </div>
+                </div>
+                <div class="text-muted h2 mb-4">
+                    Lade Daten<span class="animated-dots"></span>
+                </div>
+                <div class="progress progress-sm">
+                    <div class="progress-bar progress-bar-indeterminate"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal modal-blur fade" id="settings-changed-modal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Einstellungen wurden geändert</h5>
+                </div>
+                <div class="modal-body">
+                    Die Einstellungen dieses Server wurden in einem anderen Tab oder auf einem anderen Gerät geändert. Die Seite muss neu geladen werden, um die
+                    Änderungen anzuzeigen.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary me-auto" id="reload-btn">Neu laden</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</BaseLayout>
+
+<style is:inline>
+    .code-view {
+        overflow-y: auto;
+        height: 320px;
+        font-size: 14px;
+    }
+</style>
+<script>
+    import { errorAlert, successAlert } from '@scripts/components';
+    import { getWS } from '@scripts/socket';
+    import isIP from 'validator/es/lib/isIP';
+    // @ts-ignore
+    import { Grid, html as gridHtml } from 'gridjs';
+    import 'gridjs/dist/theme/mermaid.min.css';
+    // @ts-ignore
+    import { deDE } from 'gridjs/l10n';
+    import { capitalizeFirstLetter, debug } from '@scripts/utils';
+    import { onPageLeave, onPageLoad, registerLocalDocumentEvent } from '@scripts/router';
+
+    const urlRegex = /^\/server\/[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i;
+    const socket = getWS();
+    const isPageActive = urlRegex.test(window.location.pathname);
+
+    let server: SSLServer;
+
+    onPageLoad(() => {
+        const container = document.getElementById('container')!;
+        const path = window.location.pathname;
+        if (!urlRegex.test(path)) {
+            container.innerHTML = errorAlert('Ungültige URL');
+            return;
+        }
+
+        socket.emit('joinUIUpdates', 'server');
+        onPageLeave(() => {
+            socket.emit('leaveUIUpdates', 'server');
+        });
+
+        const serverID_ = path.split('/')[2];
+        socket.emit('getServer', serverID_, async (server_: SSLServer) => {
+            if (!isPageActive) return;
+            if (!server_) {
+                container.innerHTML = errorAlert('Server nicht gefunden');
+                return;
+            }
+            server = server_;
+            document.getElementById('page-title')!.innerHTML = `Einstellungen für ${server.name} ${serverStatusBadge(server)}`;
+
+            socket.emit('getServerLogs', serverID_, (logs: ServerLog[]) => {
+                if (!isPageActive) return;
+                document.getElementById('page-header')!.style.display = 'block';
+                let logTxt = '';
+
+                if (logs && logs.length > 0) {
+                    logs.sort((a, b) => a.createdAt - b.createdAt);
+                    for (const log of logs) {
+                        logTxt += logToString(log);
+                    }
+                } else {
+                    logTxt = 'Keine Logs vorhanden.';
+                }
+
+                socket.emit('getSSLCertList', (sslcerts: SSLCert[]) => {
+                    if (!isPageActive) return;
+                    container.innerHTML = `<div class="row">
+                    <div class="col-12 col-lg-6">
+                        <div class="card shadow" style="height:320px;">
+                            <div class="card-body pe-2 py-4">
+                                <div class="mb-3">
+                                    <label class="form-label required">Name des Servers</label>
+                                    <input type="text" class="form-control" placeholder="Geben Sie einen Namen ein." id="name-input" value="${server.name}">
+                                </div>
+                                <hr class="mt-1 mb-4">
+                                <div class="mb-3">
+                                    <label class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="check-ip-input" ${server.checkIP ? 'checked' : ''}>
+                                        <span class="form-check-label">IP-Whitelist für die Authentifizierung verwenden</span>
+                                    </label>
+                                </div>
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" id="ip-whitelist-input" placeholder="Geben Sie die IP-Adresse(n) ein." value="${
+                                        server.authIPs ? server.authIPs.join(', ') : ''
+                                    }" ${server.checkIP ? '' : 'disabled'} autocomplete="off" spellcheck="false">
+                                </div>
+                                <small>Mehrere IP-Adressen müssen durch ein Komma getrennt werden. Aktuelle IP-Adresse: ${server.ip}</small>
+                                <div class="mt-3">
+                                    <label class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="check-offline-noti" ${server.offlineNotifications ? 'checked' : ''}>
+                                        <span class="form-check-label">Benachrichtigungen senden, wenn der Server offline ist</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-6 mt-3 mt-lg-0">
+                        <div class="shadow">
+                            <pre class="text-wrap code-view">${logTxt}</pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h2 class="h3 mt-2">Zertifikate</h2>
+                        <div id="certs-grid"></div>
+                        <button type="button" class="btn btn-secondary shadow-sm mt-3 d-inline" id="add-cert-btn"><i class="ti ti-square-rounded-plus me-1"></i> Zertifikat hinzufügen</button>
+                    </div>
+                </div>
+                <div class="mt-3"><small>Bitte geben Sie absolute Pfade an.</small></div>
+                <div class="row mt-3">
+                    <div class="col-12 col-lg-6">
+                        <h2 class="h3 mt-2">Befehle vor dem Austausch</h2>
+                        <div id="pre-commands-grid"></div>
+                        <button type="button" class="btn btn-secondary shadow-sm mt-3 d-inline" id="add-pre-command-btn"><i class="ti ti-square-rounded-plus me-1"></i> Befehl hinzufügen</button>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <h2 class="h3 mt-2">Befehle nach dem Austausch</h2>
+                        <div id="post-commands-grid"></div>
+                        <button type="button" class="btn btn-secondary shadow-sm mt-3 d-inline" id="add-post-command-btn"><i class="ti ti-square-rounded-plus me-1"></i> Befehl hinzufügen</button>
+                    </div>
+                </div>
+                <div class="mt-3"><small>Die Befehle werden in der angegebenen Reihenfolge ausgeführt.</small></div>
+                <button type="button" class="btn btn-primary shadow mt-5" id="save-btn">Speichern</button>
+                <div id="alertContainer" class="mb-3"></div>
+                `;
+                    const nameInput = document.getElementById('name-input') as HTMLInputElement;
+                    const checkIPInput = document.getElementById('check-ip-input') as HTMLInputElement;
+                    const ipWhitelistInput = document.getElementById('ip-whitelist-input') as HTMLInputElement;
+
+                    const logContainer = container.querySelector('pre')!;
+                    logContainer.scrollTop = logContainer.scrollHeight;
+
+                    nameInput.addEventListener('input', () => {
+                        if (nameInput.value.length > 3 && nameInput.value.length <= 32) {
+                            nameInput.classList.remove('is-invalid');
+                            nameInput.classList.add('is-valid');
+                            return;
+                        }
+                        nameInput.classList.add('is-invalid');
+                        nameInput.classList.remove('is-valid');
+                    });
+                    checkIPInput.addEventListener('change', () => {
+                        if (checkIPInput.checked) {
+                            ipWhitelistInput.disabled = false;
+                            ipWhitelistInput.dispatchEvent(new Event('input'));
+                            return;
+                        }
+                        ipWhitelistInput.disabled = true;
+                        ipWhitelistInput.classList.remove('is-invalid');
+                        ipWhitelistInput.classList.remove('is-valid');
+                    });
+                    ipWhitelistInput.addEventListener('input', () => {
+                        if (validateIPList(ipWhitelistInput.value)) {
+                            ipWhitelistInput.classList.remove('is-invalid');
+                            ipWhitelistInput.classList.add('is-valid');
+                            return;
+                        }
+                        ipWhitelistInput.classList.add('is-invalid');
+                        ipWhitelistInput.classList.remove('is-valid');
+                    });
+
+                    const preCommands = [...server.config.preCommands];
+                    const postCommands = [...server.config.postCommands];
+
+                    if (preCommands.length === 0) {
+                        preCommands.push('');
+                    }
+                    if (postCommands.length === 0) {
+                        postCommands.push('');
+                    }
+
+                    const certs = [...server.config.certs];
+
+                    if (certs.length === 0 && sslcerts.length > 0) {
+                        certs.push({
+                            _id: sslcerts[0]._id,
+                            fullchainPath: '',
+                            keyPath: '',
+                        });
+                    }
+
+                    const certGrid = new Grid({
+                        columns: [
+                            {
+                                name: 'ID',
+                                hidden: true,
+                            },
+                            {
+                                name: 'Zertifikat',
+                                id: '_id',
+                                formatter: (cell: any, row: any) => {
+                                    return gridHtml(getSSLCertSelect(sslcerts, cell as string, row.cells[0].data as string));
+                                },
+                            },
+                            {
+                                name: 'Fullchain Pfad',
+                                id: 'fullchainPath',
+                                formatter: (cell: any, row: any) => {
+                                    return gridHtml(
+                                        `<input type="text" class="form-control" data-input="fullchainPathInput" placeholder="Dateipfad eingeben (.pem)" data-id="${row.cells[0].data}" value="${cell}" autocomplete="off" spellcheck="false">`,
+                                    );
+                                },
+                            },
+                            {
+                                name: 'Key Pfad',
+                                id: 'fullchainPath',
+                                formatter: (cell: any, row: any) => {
+                                    return gridHtml(
+                                        `<input type="text" class="form-control" data-input="keyPathInput" placeholder="Dateipfad eingeben (.pem)" data-id="${row.cells[0].data}" value="${cell}" autocomplete="off" spellcheck="false">`,
+                                    );
+                                },
+                            },
+                            {
+                                name: 'Aktionen',
+                                formatter: (_cell: any, row: any) => {
+                                    return gridHtml(`<div class="btn-list">
+                                    <button type="button" class="btn btn-danger grid-btn" data-action="deleteSSLCert" data-id="${row.cells[0].data}"><i class="ti ti-trash"></i></button>
+                                </div>`);
+                                },
+                            },
+                        ],
+                        search: false,
+                        sort: false,
+                        resizable: false,
+                        language: deDE,
+                        data: certsToGridData(certs),
+                    }).render(document.getElementById(`certs-grid`)!);
+
+                    const preCommandsGrid = createCommandGrid('pre', preCommands);
+                    const postCommandsGrid = createCommandGrid('post', postCommands);
+
+                    document.getElementById('add-pre-command-btn')!.addEventListener('click', () => {
+                        preCommands.push('');
+                        preCommandsGrid.updateConfig({
+                            data: commandsToGridData(preCommands),
+                        });
+                        preCommandsGrid.forceRender();
+                        setTimeout(() => {
+                            const inputs = document.querySelectorAll('input[data-input="preCommandInput"]');
+                            const input = inputs[inputs.length - 1] as HTMLInputElement;
+                            input.focus();
+                        }, 100);
+                    });
+
+                    document.getElementById('add-post-command-btn')!.addEventListener('click', () => {
+                        postCommands.push('');
+                        postCommandsGrid.updateConfig({
+                            data: commandsToGridData(postCommands),
+                        });
+                        postCommandsGrid.forceRender();
+                        setTimeout(() => {
+                            const inputs = document.querySelectorAll('input[data-input="postCommandInput"]');
+                            const input = inputs[inputs.length - 1] as HTMLInputElement;
+                            input.focus();
+                        }, 100);
+                    });
+
+                    const addCertBtn = document.getElementById('add-cert-btn')! as HTMLButtonElement;
+                    if (sslcerts.length === 0) {
+                        addCertBtn.setAttribute('disabled', 'true');
+                        addCertBtn.classList.remove('btn-secondary');
+                        addCertBtn.classList.add('btn-danger');
+                        addCertBtn.innerHTML = '<i class="ti ti-alert me-1"></i> Keine Zertifikate vorhanden';
+                    }
+
+                    document.getElementById('add-cert-btn')!.addEventListener('click', () => {
+                        if (sslcerts.length === 0) return;
+                        certs.push({
+                            _id: sslcerts[0]._id,
+                            fullchainPath: '',
+                            keyPath: '',
+                        });
+                        certGrid.updateConfig({
+                            data: certsToGridData(certs),
+                        });
+                        certGrid.forceRender();
+                        setTimeout(() => {
+                            const inputs = document.querySelectorAll('input[data-input="fullchainPathInput"]');
+                            const input = inputs[inputs.length - 1] as HTMLInputElement;
+                            input.focus();
+                        }, 100);
+                    });
+
+                    registerLocalDocumentEvent('input', (e) => {
+                        const target = e.target as HTMLInputElement;
+                        if (!target.dataset || !target.dataset.input) {
+                            return;
+                        }
+                        if (target.dataset.input === 'preCommandInput') {
+                            const id = target.dataset.id!;
+                            const command = target.value;
+                            preCommands[parseInt(id)] = command;
+                        }
+                        if (target.dataset.input === 'postCommandInput') {
+                            const id = target.dataset.id!;
+                            const command = target.value;
+                            postCommands[parseInt(id)] = command;
+                        }
+                        if (target.dataset.input === 'fullchainPathInput') {
+                            const id = target.dataset.id!;
+                            const path = target.value;
+                            certs[parseInt(id)].fullchainPath = path;
+                        }
+                        if (target.dataset.input === 'keyPathInput') {
+                            const id = target.dataset.id!;
+                            const path = target.value;
+                            certs[parseInt(id)].keyPath = path;
+                        }
+                        if (target.dataset.input === 'sslCertSelect') {
+                            const id = target.dataset.id!;
+                            const certID = target.value;
+                            certs[parseInt(id)]._id = certID;
+                        }
+                    });
+
+                    registerLocalDocumentEvent('click', (e) => {
+                        let clickActionDataset: DOMStringMap | undefined;
+                        const target = e.target as HTMLElement;
+                        const parent = target.parentElement;
+                        if (target.dataset && target.dataset.action) {
+                            clickActionDataset = target.dataset;
+                        } else if (parent && parent.dataset && parent.dataset.action) {
+                            clickActionDataset = parent.dataset;
+                        }
+                        if (!clickActionDataset) return;
+
+                        if (clickActionDataset.action === 'deletePreCommand') {
+                            const id = Number(clickActionDataset.id);
+                            preCommands.splice(id, 1);
+                            preCommandsGrid.updateConfig({
+                                data: commandsToGridData(preCommands),
+                            });
+                            preCommandsGrid.forceRender();
+                            return;
+                        }
+                        if (clickActionDataset.action === 'deletePostCommand') {
+                            const id = Number(clickActionDataset.id);
+                            postCommands.splice(id, 1);
+                            postCommandsGrid.updateConfig({
+                                data: commandsToGridData(postCommands),
+                            });
+                            postCommandsGrid.forceRender();
+                            return;
+                        }
+                        if (clickActionDataset.action === 'deleteSSLCert') {
+                            const id = clickActionDataset.id;
+                            certs.splice(Number(id), 1);
+                            certGrid.updateConfig({
+                                data: certsToGridData(certs),
+                            });
+                            certGrid.forceRender();
+                            return;
+                        }
+                    });
+
+                    socket.emit('joinServerLogsUpdates', server._id);
+                    onPageLeave(() => {
+                        socket.emit('leaveServerLogsUpdates', server._id);
+                    });
+
+                    const offlineNotificationsInput = document.getElementById('check-offline-noti') as HTMLInputElement;
+
+                    const saveBtn = document.getElementById('save-btn')!;
+                    saveBtn.addEventListener('click', () => {
+                        const alertContainer = document.getElementById('alertContainer')!;
+                        alertContainer.innerHTML = '';
+                        if (nameInput.value.length < 3 || nameInput.value.length > 32) {
+                            nameInput.classList.add('is-invalid');
+                            nameInput.classList.remove('is-valid');
+                            alertContainer.innerHTML = errorAlert('Der Name muss zwischen 3 und 32 Zeichen lang sein.');
+                            return;
+                        }
+                        if (checkIPInput.checked && !validateIPList(ipWhitelistInput.value)) {
+                            ipWhitelistInput.classList.add('is-invalid');
+                            ipWhitelistInput.classList.remove('is-valid');
+                            alertContainer.innerHTML = errorAlert('Die IP-Whitelist enthält ungültige IP-Adressen.');
+                            return;
+                        }
+
+                        const cleanedPreCommands = preCommands.filter((command) => command.length > 0);
+                        for (const i in cleanedPreCommands) {
+                            cleanedPreCommands[i] = cleanedPreCommands[i].trim();
+                        }
+                        const cleanedPostCommands = postCommands.filter((command) => command.length > 0);
+                        for (const i in cleanedPostCommands) {
+                            cleanedPostCommands[i] = cleanedPostCommands[i].trim();
+                        }
+
+                        const invalidCertInput = certs.filter((cert) => cert.fullchainPath.length === 0 || cert.keyPath.length === 0);
+                        if (invalidCertInput && invalidCertInput.length > 0) {
+                            alertContainer.innerHTML = errorAlert('Bitte geben Sie für jedes Zertifikat einen Pfad an.');
+                            return;
+                        }
+
+                        const uniqePaths: string[] = [];
+                        for (const cert of certs) {
+                            if (!cert.fullchainPath.endsWith('.pem') || !cert.keyPath.endsWith('.pem')) {
+                                alertContainer.innerHTML = errorAlert('Die Zertifikatpfade müssen mit .pem enden.');
+                                return;
+                            }
+                            if (cert.fullchainPath === cert.keyPath) {
+                                alertContainer.innerHTML = errorAlert('Die Pfade eines Zertifikats und des dazugehörigen Schlüssels dürfen nicht gleich sein.');
+                                return;
+                            }
+                            if (uniqePaths.includes(cert.fullchainPath) || uniqePaths.includes(cert.keyPath)) {
+                                alertContainer.innerHTML = errorAlert('Die Pfade eines Zertifikats und des dazugehörigen Schlüssels müssen eindeutig sein.');
+                                return;
+                            }
+                            uniqePaths.push(cert.fullchainPath);
+                            uniqePaths.push(cert.keyPath);
+                        }
+
+                        const cleanedCerts = [...certs];
+                        for (const i in cleanedCerts) {
+                            cleanedCerts[i].fullchainPath = cleanedCerts[i].fullchainPath.trim();
+                            cleanedCerts[i].keyPath = cleanedCerts[i].keyPath.trim();
+                        }
+
+                        let authIPs = undefined;
+                        if (checkIPInput.checked) {
+                            authIPs = ipWhitelistInput.value.split(',').map((ip) => ip.trim());
+                        }
+                        saveBtn.setAttribute('disabled', 'true');
+                        server.config.v++;
+                        socket.emit(
+                            'updateServerConfig',
+                            server._id,
+                            nameInput.value,
+                            checkIPInput.checked,
+                            authIPs,
+                            offlineNotificationsInput.checked,
+                            {
+                                certs: cleanedCerts,
+                                preCommands: cleanedPreCommands,
+                                postCommands: cleanedPostCommands,
+                                v: server.config.v,
+                            },
+                            (resultCode: number) => {
+                                if (!isPageActive) return;
+                                if (!resultCode) {
+                                    alertContainer.innerHTML = successAlert('Einstellungen gespeichert.');
+                                    setTimeout(() => {
+                                        if (!isPageActive) return;
+                                        saveBtn.removeAttribute('disabled');
+                                    }, 2000);
+                                    return;
+                                }
+                                saveBtn.removeAttribute('disabled');
+                                server.config.v--;
+                                let txt = 'Die Einstellungen konnten nicht gespeichert werden.';
+                                if (resultCode === 1) {
+                                    txt += ' Grund: Ungültige Konfiguration';
+                                } else if (resultCode === 2) {
+                                    txt += ' Grund: Server nicht gefunden';
+                                } else if (resultCode === 3) {
+                                    txt +=
+                                        ' Grund: Die Konfiguration wurde gleichzeitig in einem anderen Tab oder auf einem anderen Gerät geändert. Bitte laden Sie die Seite neu.';
+                                } else if (resultCode === 4) {
+                                    txt += ' Grund: Datenbankfehler';
+                                }
+                                alertContainer.innerHTML = errorAlert(txt);
+                            },
+                        );
+                    });
+                });
+            });
+        });
+
+        document.getElementById('reload-btn')!.addEventListener('click', () => {
+            window.location.reload();
+        });
+    });
+
+    function serverStatusBadge(server: SSLServer) {
+        return `<span style="font-size:14px;" class="badge ms-3 ${server.online ? 'text-bg-success">Online' : 'text-bg-danger">Offline'}</span>`;
+    }
+
+    function commandsToGridData(commands: string[]) {
+        return commands.map((command, i) => [i, command.replaceAll('"', '&quot;')]);
+    }
+
+    function certsToGridData(certs: ServerConfigSSLCert[]) {
+        return certs.map((cert, i) => [i, cert._id, cert.fullchainPath, cert.keyPath]);
+    }
+
+    function settingsChangedModal() {
+        // @ts-ignore
+        const modal = bootstrap.Modal.getOrCreateInstance('#settings-changed-modal', {
+            backdrop: 'static',
+            keyboard: false,
+        });
+        modal.show();
+    }
+
+    socket.on('serversUpdate', (servers: SSLServer[]) => {
+        if (!isPageActive) return;
+        if (!server) {
+            return;
+        }
+        for (const server_ of servers) {
+            if (server_._id === server._id) {
+                if (server.config.v !== server_.config.v) {
+                    settingsChangedModal();
+                    return;
+                }
+                server = server_;
+                document.getElementById('page-title')!.innerHTML = `Einstellungen für ${server.name} ${serverStatusBadge(server)}`;
+                return;
+            }
+        }
+    });
+
+    function validateIPList(txt: string) {
+        const ips = txt.split(',').map((ip) => ip.trim());
+        for (const ip of ips) {
+            if (!isIP(ip)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function logToString(log: ServerLog) {
+        log.content = log.content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        log.content = log.content.replace(/\n/g, '<br>');
+        return `<span class="${log.logLevel === 'error' ? 'text-danger' : log.logLevel === 'warn' ? 'text-warning' : ''}">${new Date(
+            log.createdAt,
+        ).toLocaleString()}: ${log.logLevel} - ${log.content}</span><br>`;
+    }
+
+    socket.on('serverLog', (log: ServerLog) => {
+        if (!isPageActive) return;
+        if (!server || log.serverID !== server._id) {
+            return;
+        }
+        const container = document.getElementById('container')!;
+        const logContainer = container.querySelector('pre')!;
+        logContainer.innerHTML += logToString(log);
+        logContainer.scrollTop = logContainer.scrollHeight;
+    });
+
+    function createCommandGrid(type: 'pre' | 'post', commands: string[]) {
+        return new Grid({
+            columns: [
+                {
+                    name: 'ID',
+                    formatter: (cell: any) => {
+                        return Number(cell) + 1;
+                    },
+                },
+                {
+                    name: 'Befehl',
+                    formatter: (_cell: any, row: any) => {
+                        return gridHtml(
+                            `<input type="text" class="form-control" data-input="${type}CommandInput" placeholder="Befehl eingeben (z.B. Webserver neustarten)" data-id="${row.cells[0].data}" value="${row.cells[1].data}" autocomplete="off" spellcheck="false">`,
+                        );
+                    },
+                },
+                {
+                    name: 'Aktionen',
+                    formatter: (_cell: any, row: any) => {
+                        return gridHtml(`<div class="btn-list">
+                                    <button type="button" class="btn btn-danger grid-btn" data-action="delete${capitalizeFirstLetter(type)}Command" data-id="${
+                                        row.cells[0].data
+                                    }"><i class="ti ti-trash"></i></button>
+                                </div>`);
+                    },
+                },
+            ],
+            search: false,
+            sort: false,
+            resizable: false,
+            language: deDE,
+            data: commandsToGridData(commands),
+        }).render(document.getElementById(`${type}-commands-grid`)!);
+    }
+
+    function getSSLCertSelect(sslcerts: SSLCert[], selectedID: string, index: number | string) {
+        let html = `<select class="form-select" data-input="sslCertSelect" data-id="${index}">`;
+        for (const cert of sslcerts) {
+            html += `<option value="${cert._id}" ${cert._id === selectedID ? 'selected' : ''}>${cert.altNames.join(',')}</option>`;
+        }
+        html += `</select>`;
+        return html;
+    }
+</script>

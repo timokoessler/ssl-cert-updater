@@ -1,0 +1,218 @@
+---
+import '@fontsource-variable/nunito';
+import '@tabler/core/dist/css/tabler.min.css';
+import '@tabler/core/dist/css/tabler-vendors.min.css';
+import '@tabler/icons-webfont/tabler-icons.min.css';
+import Sidebar from '@components/Sidebar.astro';
+import Footer from '@components/Footer.astro';
+import { ViewTransitions } from 'astro:transitions';
+
+interface Props {
+    title?: string;
+    lang?: string;
+    themeColor?: string;
+    noRobots?: boolean;
+    pageType?: 'app' | 'auth' | 'error';
+    description?: string;
+}
+
+const {
+    title = import.meta.env.PUBLIC_APP_NAME,
+    lang = import.meta.env.DEFAULT_LANG,
+    themeColor = import.meta.env.THEME_COLOR,
+    noRobots = import.meta.env.NO_ROBOTS,
+    pageType = 'app',
+    description = import.meta.env.PUBLIC_APP_DESCRIPTION,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang={lang}>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <title>{title}</title>
+        <meta name="title" content={title} />
+        <meta name="description" content={description} />
+
+        <ViewTransitions />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
+
+        <link rel="icon" type="image/png" sizes="192x192" href="/img/favicon-192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/img/favicon-512.png" />
+        <link rel="icon" type="image/png" sizes="180x180" href="/img/favicon-180.png" />
+        <link rel="icon" type="image/png" sizes="128x128" href="/img/favicon-128.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32.png" />
+
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/img/favicon-180.png" />
+
+        {themeColor && <meta name="theme-color" content={`#${themeColor}`} />}
+        {noRobots && <meta name="robots" content="noindex nofollow" />}
+        <meta name="author" content={import.meta.env.COPYRIGHT ? import.meta.env.COPYRIGHT : 'Timo Kössler'} />
+    </head>
+    <body class={pageType === 'app' ? 'border-top-wide border-primary' : 'border-top-wide border-primary d-flex flex-column'}>
+        {
+            pageType === 'app' ? (
+                <div class="page">
+                    <Sidebar />
+                    <div class="page-wrapper">
+                        <slot />
+                        <Footer />
+                    </div>
+                </div>
+            ) : pageType === 'auth' ? (
+                <div class="page page-center">
+                    <div class="container container-normal py-4">
+                        <div class="row align-items-center g-4">
+                            <div class="col-lg">
+                                <div class="container-tight">
+                                    <div class="text-center mb-4">
+                                        <a href="/" class="navbar-brand navbar-brand-autodark">
+                                            <img src="/img/logo-text.svg" id="header-img" height="100" alt={import.meta.env.PUBLIC_APP_NAME} />
+                                        </a>
+                                    </div>
+                                    <slot />
+                                    <div class="d-flex mt-3 mb-3 justify-content-center">
+                                        <ul class="list-inline list-inline-dots mb-0">
+                                            <li class="list-inline-item">
+                                                <a href={`${import.meta.env.FOOTER_URL || ''}/imprint`} class="link-secondary" target="_blank" rel="noopener">
+                                                    Impressum
+                                                </a>
+                                            </li>
+                                            <li class="list-inline-item">
+                                                <a href={`${import.meta.env.FOOTER_URL || ''}/privacy`} class="link-secondary">
+                                                    Datenschutz
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <>
+                    <span id="errorPage" />
+                    <div class="page page-center">
+                        <div class="container-tight py-4">
+                            <div class="empty">
+                                <slot />
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )
+        }
+        <style is:global>
+            * {
+                font-family: 'Nunito Variable', sans-serif;
+                font-weight: 500;
+                --tblr-font-size-h1: 2rem;
+                --tblr-font-size-h2: 1.5rem;
+                --tblr-font-size-h3: 1.25rem;
+                --tblr-font-size-h4: 1rem;
+                --tblr-border-radius: 6px;
+                --tblr-primary: #2b7eb5;
+                --tblr-primary-rgb: 43, 126, 181;
+            }
+            button {
+                --tblr-btn-padding-y: 0.4375rem !important;
+                --tblr-btn-font-size: 0.84rem !important;
+            }
+            .text-tooltip {
+                text-decoration: underline;
+                text-decoration-style: dotted;
+            }
+
+            .image-center {
+                display: block;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .center-loading {
+                margin: auto;
+                max-width: 256px;
+                margin-top: 20vh;
+            }
+
+            .list-group-item-link .list-group-item {
+                border-radius: 8px !important;
+            }
+
+            .list-group-item-link:hover {
+                text-decoration: none !important;
+            }
+
+            .list-group-item-link:hover .list-group-item {
+                box-shadow: 0 0.125rem 0.25rem #00000013 !important;
+            }
+
+            .big-spinner {
+                width: 4rem !important;
+                height: 4rem !important;
+                border-width: 3px !important;
+                --tblr-spinner-animation-speed: 1.2s !important;
+            }
+
+            .page-title {
+                font-size: 1.5rem !important;
+                line-height: 2rem !important;
+            }
+
+            .center-dashboard {
+                margin: auto;
+                max-width: 380px;
+                margin-top: 15vh;
+            }
+
+            .text-dotted {
+                text-decoration: underline;
+                text-decoration-style: dotted;
+                text-underline-offset: 3px;
+            }
+
+            .grid-btn {
+                font-size: 16px !important;
+                padding: 8px 14px !important;
+            }
+
+            [data-bs-theme='dark'] .navbar-brand-autodark .navbar-brand-image {
+                filter: none !important;
+            }
+
+            @media (min-width: 992px) {
+                .center-loading {
+                    position: absolute;
+                    top: 0;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    margin: auto;
+                    max-width: 256px;
+                    margin-top: 20vh;
+                }
+
+                .center-dashboard {
+                    position: absolute;
+                    top: 0;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    margin: auto;
+                    max-width: 380px;
+                    margin-top: 15vh;
+                }
+            }
+        </style>
+        <script>
+            import '@tabler/core/dist/js/tabler.min.js';
+            import '@scripts/main';
+        </script>
+    </body>
+</html>

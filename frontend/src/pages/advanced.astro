@@ -1,0 +1,382 @@
+---
+import PageHeader from '@components/PageHeader.astro';
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout>
+    <PageHeader title="Erweiterte Einstellungen" preTitle={import.meta.env.PUBLIC_APP_NAME} visible={false} />
+    <div class="page-body">
+        <div class="container-xl" id="container">
+            <div class="center-loading text-center">
+                <div class="mb-3 d-none d-lg-block">
+                    <div class="navbar-brand navbar-brand-autodark">
+                        <img src="/img/logo.svg" height="100" alt={import.meta.env.PUBLIC_APP_NAME} />
+                    </div>
+                </div>
+                <div class="text-muted h2 mb-4">
+                    Lade Daten<span class="animated-dots"></span>
+                </div>
+                <div class="progress progress-sm">
+                    <div class="progress-bar progress-bar-indeterminate"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal modal-blur fade" id="edit-dns-modal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">DNS-Provider bearbeiten</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Anbieter</label>
+                    <div class="form-selectgroup-boxes row mb-3">
+                        <div class="col-lg-6">
+                            <label class="form-selectgroup-item">
+                                <input type="radio" name="dns-edit-type" value="netcup" class="form-selectgroup-input" checked="" />
+                                <span class="form-selectgroup-label d-flex align-items-center p-3">
+                                    <span class="me-3">
+                                        <span class="form-selectgroup-check"></span>
+                                    </span>
+                                    <span class="form-selectgroup-label-content">
+                                        <span class="form-selectgroup-title strong mb-1">netcup</span>
+                                        <span class="d-block text-secondary">DNS-API der deutschen Firma netcup</span>
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                        <div class="col-lg-6">
+                            <label class="form-selectgroup-item text-secondary">
+                                <input type="radio" name="dns-edit-type" value="1" class="form-selectgroup-input" disabled />
+                                <span class="form-selectgroup-label d-flex align-items-center p-3">
+                                    <span class="me-3">
+                                        <span class="form-selectgroup-check"></span>
+                                    </span>
+                                    <span class="form-selectgroup-label-content">
+                                        <span class="form-selectgroup-title strong mb-1">Nicht verfügbar</span>
+                                        <span class="d-block text-secondary">Keine anderen Anbieter verfügbar</span>
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label required">Kundennummer</label>
+                                <input type="text" class="form-control" required id="dns-edit-customer-nr" placeholder="Kundennummer eingeben" />
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-3">
+                                <label class="form-label required">API Key</label>
+                                <input type="text" class="form-control" required id="dns-edit-api-key" placeholder="API Key eingeben" />
+                            </div>
+                        </div>
+                        <div class="col-lg-12">
+                            <div>
+                                <label class="form-label required">API Passwort</label>
+                                <input type="password" class="form-control" required id="dns-edit-api-pass" placeholder="API Passwort eingeben" />
+                            </div>
+                        </div>
+                    </div>
+                    <div id="dns-edit-alert-container">
+                        <div class="text-danger mt-3">Aus Sicherheitsgründen werden die aktuellen API Zugangsdaten nicht angezeigt.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="#" class="btn btn-link link-secondary" data-bs-dismiss="modal"> Abbrechen</a>
+                    <a href="#" class="btn btn-primary ms-auto" id="dns-edit-btn">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="icon icon-tabler icon-tabler-device-floppy"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            stroke-width="2"
+                            stroke="currentColor"
+                            fill="none"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                            <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2"></path>
+                            <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
+                            <path d="M14 4l0 4l-6 0l0 -4"></path>
+                        </svg>
+                         Speichern
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</BaseLayout>
+
+<style></style>
+<script>
+    /* eslint-disable @typescript-eslint/no-non-null-assertion */
+    /* eslint-disable @typescript-eslint/ban-ts-comment */
+    // @ts-ignore Package is wrong configured
+    import { Grid, html as gridHtml } from 'gridjs';
+    import 'gridjs/dist/theme/mermaid.min.css';
+    // @ts-ignore
+    import { deDE } from 'gridjs/l10n';
+    import { capitalizeFirstLetter } from '@scripts/utils';
+    import { getWS } from '@scripts/socket';
+    import { errorAlert } from '@scripts/components';
+    import { onFirstPageLoad, onPageLoad, registerLocalDocumentEvent } from '@scripts/router';
+
+    let container: HTMLDivElement;
+    let dnsProviderGrid: Grid;
+    let leAccountGrid: Grid;
+    let pageInvisibleSince = -1;
+    let dnsProviders: DNSProvider[] = [];
+    let leAccounts: LetsEncryptAccount[] = [];
+
+    const socket = getWS();
+    const isPageActive = () => window.location.pathname === '/advanced';
+
+    registerLocalDocumentEvent('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            pageInvisibleSince = Date.now();
+        } else {
+            if (pageInvisibleSince !== -1 && Date.now() - pageInvisibleSince > 1000) {
+                socket.emit('requestUIUpdate', ['dnsprovider', 'letsencryptaccount']);
+            }
+            pageInvisibleSince = -1;
+        }
+    });
+
+    onFirstPageLoad(() => {
+        socket.on('dnsProvidersUpdate', (dnsProviders_: DNSProvider[]) => {
+            if (!isPageActive()) return;
+            dnsProviders = dnsProviders_;
+            dnsProviderGrid
+                .updateConfig({
+                    data: dnsProvidersToGridData(dnsProviders),
+                })
+                .forceRender();
+        });
+
+        socket.on('letsEncryptAccountsUpdate', (leAccounts_: LetsEncryptAccount[]) => {
+            if (!isPageActive()) return;
+            leAccounts = leAccounts_;
+            leAccountGrid
+                .updateConfig({
+                    data: letsencryptAccountsToGridData(leAccounts),
+                })
+                .forceRender();
+        });
+
+        registerLocalDocumentEvent('click', (e) => {
+            let clickActionDataset: DOMStringMap | undefined;
+            const target = e.target as HTMLElement;
+            const parent = target.parentElement;
+            if (target.dataset && target.dataset.action) {
+                clickActionDataset = target.dataset;
+            } else if (parent && parent.dataset && parent.dataset.action) {
+                clickActionDataset = parent.dataset;
+            }
+            if (!clickActionDataset) return;
+
+            // @ts-expect-error
+            const editDNSModal = bootstrap.Modal.getOrCreateInstance('#edit-dns-modal');
+            const editDNSBtn = document.getElementById('dns-edit-btn')! as HTMLButtonElement;
+            const editDNSCustomerNr = document.getElementById('dns-edit-customer-nr')! as HTMLInputElement;
+            const editDNSApiKey = document.getElementById('dns-edit-api-key')! as HTMLInputElement;
+            const editDNSApiPassword = document.getElementById('dns-edit-api-pass')! as HTMLInputElement;
+
+            if (clickActionDataset.action === 'modifyDNSProvider') {
+                const id = clickActionDataset.id;
+                if (!id) return;
+                const dnsProvider = dnsProviders.find((provider) => provider._id === id);
+                if (!dnsProvider) return;
+                editDNSCustomerNr.value = dnsProvider.customerNumber;
+                editDNSBtn.dataset.id = dnsProvider._id;
+                editDNSApiKey.value = '';
+                editDNSApiPassword.value = '';
+                editDNSModal.show();
+            }
+        });
+    });
+
+    onPageLoad(async () => {
+        container = document.getElementById('container')! as HTMLDivElement;
+
+        // Load data async
+        const gridData = await Promise.all([loadDNSProviderList(), loadLetsEncryptAccounts()]);
+
+        container.innerHTML = `<div class="row mt-3">
+            <div class="col-12">
+                <h2 class="h2">DNS-Provider</h2>
+                <hr class="mt-0 mb-3">
+                <div id="dnsProviderWrapper"></div>
+                <h2 class="h2 mt-4">Let's Encrypt Konten</h2>
+                <hr class="mt-0 mb-3">
+                <div id="leAccountGridWrapper"></div>
+                <div class="mt-3 text-secondary"><small>DNS-Provider und Let's Encrypt Konten können bei der Erstellung eines Zertifikats hinzugefügt werden. Dieses Dashboard aktualisiert sich in Echtzeit.</small></div>
+            </div>
+        </div>`;
+        document.getElementById('page-header')!.style.display = 'block';
+
+        dnsProviderGrid = new Grid({
+            columns: [
+                {
+                    id: 'id',
+                    name: 'ID',
+                    hidden: true,
+                },
+                {
+                    id: 'type',
+                    name: 'Anbieter',
+                },
+                {
+                    id: 'customerNumber',
+                    name: 'Kundennummer',
+                },
+                {
+                    name: 'API Key',
+                    formatter: () => '****************',
+                },
+                {
+                    name: 'API Passwort',
+                    formatter: () => '****************',
+                },
+                {
+                    id: 'createdAt',
+                    name: 'Erstellt am',
+                },
+                {
+                    name: 'Aktionen',
+                    formatter: (_cell: unknown, row: any) => {
+                        return gridHtml(`<div>
+                    <button type="button" class="btn btn-primary grid-btn" title="Bearbeiten" data-action="modifyDNSProvider" data-id="${row.cells[0].data}"><i class="ti ti-pencil"></i></button>
+                </div>`);
+                    },
+                },
+            ],
+            search: true,
+            sort: true,
+            resizable: false,
+            language: deDE,
+            data: gridData[0],
+        }).render(document.getElementById('dnsProviderWrapper')!);
+
+        leAccountGrid = new Grid({
+            columns: [
+                {
+                    id: 'id',
+                    name: 'ID',
+                    hidden: true,
+                },
+                {
+                    id: 'email',
+                    name: 'E-Mail Adresse',
+                },
+                {
+                    name: 'Privater Schlüssel',
+                    formatter: () => '********************************',
+                },
+                {
+                    id: 'createdAt',
+                    name: 'Erstellt am',
+                },
+            ],
+            search: true,
+            sort: true,
+            resizable: false,
+            language: deDE,
+            data: gridData[1],
+        }).render(document.getElementById('leAccountGridWrapper')!);
+
+        // @ts-expect-error
+        const editDNSModal = bootstrap.Modal.getOrCreateInstance('#edit-dns-modal');
+        const editDNSBtn = document.getElementById('dns-edit-btn')! as HTMLButtonElement;
+        const editDNSCustomerNr = document.getElementById('dns-edit-customer-nr')! as HTMLInputElement;
+        const editDNSApiKey = document.getElementById('dns-edit-api-key')! as HTMLInputElement;
+        const editDNSApiPassword = document.getElementById('dns-edit-api-pass')! as HTMLInputElement;
+        const editDNSAlertContainer = document.getElementById('dns-edit-alert-container')! as HTMLDivElement;
+
+        editDNSBtn.addEventListener('click', () => {
+            if (!editDNSBtn.dataset.id) return;
+            const id = editDNSBtn.dataset.id;
+            const customerNr = editDNSCustomerNr.value;
+            const apiKey = editDNSApiKey.value;
+            const apiPassword = editDNSApiPassword.value;
+            if (!customerNr.length || !apiKey.length || !apiPassword.length) {
+                editDNSAlertContainer.innerHTML = errorAlert('Bitte füllen Sie alle Felder aus');
+                return;
+            }
+            editDNSAlertContainer.innerHTML = '';
+            const dnsProvider = dnsProviders.find((provider) => provider._id === id);
+            if (!dnsProvider) return;
+            editDNSBtn.disabled = true;
+            socket.emit(
+                'modifyDNSProvider',
+                {
+                    _id: id,
+                    type: dnsProvider.type,
+                    customerNumber: customerNr,
+                    apiKey,
+                    apiPassword,
+                    createdAt: dnsProvider.createdAt,
+                } as DNSProvider,
+                (success: boolean, errorMsg?: string) => {
+                    if (!isPageActive()) return;
+                    editDNSBtn.disabled = false;
+                    if (!success) {
+                        editDNSAlertContainer.innerHTML = errorAlert(errorMsg || 'Es ist ein Fehler aufgetreten');
+                        return;
+                    }
+                    editDNSModal.hide();
+                },
+            );
+        });
+    });
+
+    function dnsProvidersToGridData(dnsProviders: DNSProvider[]) {
+        return dnsProviders.map((provider) => {
+            return {
+                id: provider._id,
+                type: capitalizeFirstLetter(provider.type),
+                customerNumber: provider.customerNumber,
+                createdAt: new Date(provider.createdAt).toLocaleDateString(),
+            };
+        });
+    }
+
+    function loadDNSProviderList() {
+        // eslint-disable-next-line @typescript-eslint/ban-types
+        return new Promise((resolve: (data: {}[]) => void, reject: (error: string) => void) => {
+            socket.emit('getDNSProviders', (dnsProviders_: DNSProvider[]) => {
+                if (!isPageActive()) return;
+                if (!Array.isArray(dnsProviders_)) reject('Es ist ein Fehler aufgetreten');
+                dnsProviders = dnsProviders_;
+                resolve(dnsProvidersToGridData(dnsProviders));
+            });
+        });
+    }
+
+    function letsencryptAccountsToGridData(leAccounts_: LetsEncryptAccount[]) {
+        return leAccounts.map((account) => {
+            return {
+                id: account._id,
+                email: account.email,
+                createdAt: new Date(account.createdAt).toLocaleDateString(),
+            };
+        });
+    }
+
+    function loadLetsEncryptAccounts() {
+        // eslint-disable-next-line @typescript-eslint/ban-types
+        return new Promise((resolve: (data: {}[]) => void, reject: (error: string) => void) => {
+            socket.emit('getLetsEncryptAccounts', (leAccounts_: LetsEncryptAccount[]) => {
+                if (!isPageActive()) return;
+                if (!Array.isArray(leAccounts_)) reject('Es ist ein Fehler aufgetreten');
+                leAccounts = leAccounts_;
+                resolve(letsencryptAccountsToGridData(leAccounts));
+            });
+        });
+    }
+</script>

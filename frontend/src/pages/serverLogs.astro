@@ -1,0 +1,125 @@
+---
+import PageHeader from '@components/PageHeader.astro';
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout>
+    <PageHeader title="Server-Logs" preTitle={import.meta.env.PUBLIC_APP_NAME} visible={false} />
+    <div class="page-body">
+        <div class="container-xl" id="container">
+            <div class="center-loading text-center">
+                <div class="mb-3 d-none d-lg-block">
+                    <div class="navbar-brand navbar-brand-autodark">
+                        <img src="/img/logo.svg" height="100" alt={import.meta.env.PUBLIC_APP_NAME} />
+                    </div>
+                </div>
+                <div class="text-muted h2 mb-4">
+                    Lade Daten<span class="animated-dots"></span>
+                </div>
+                <div class="progress progress-sm">
+                    <div class="progress-bar progress-bar-indeterminate"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</BaseLayout>
+
+<style></style>
+<script>
+    import { errorAlert } from '@scripts/components';
+    import { onPageLeave, onPageLoad } from '@scripts/router';
+    import { getWS } from '@scripts/socket';
+
+    const urlRegex = /^\/server\/[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}\/logs$/i;
+    const socket = getWS();
+    const isPageActive = urlRegex.test(window.location.pathname);
+
+    let server: SSLServer;
+
+    onPageLoad(() => {
+        const container = document.getElementById('container')!;
+        const path = window.location.pathname;
+        if (!urlRegex.test(path)) {
+            container.innerHTML = errorAlert('Ungültige URL');
+            return;
+        }
+
+        const serverID_ = path.split('/')[2];
+        socket.emit('getServer', serverID_, async (server_: SSLServer) => {
+            if (!isPageActive) return;
+            if (!server_) {
+                container.innerHTML = errorAlert('Server nicht gefunden');
+                return;
+            }
+            server = server_;
+            document.getElementById('page-title')!.innerHTML = `Logs für ${server.name} ${serverStatusBadge(server)}`;
+
+            socket.emit('getServerLogs', serverID_, (logs: ServerLog[]) => {
+                if (!isPageActive) return;
+                document.getElementById('page-header')!.style.display = 'block';
+                if (!logs) {
+                    container.innerHTML = errorAlert('Logs konnten nicht geladen werden');
+                    return;
+                }
+                if (logs.length === 0) {
+                    container.innerHTML = errorAlert('Keine Logs vorhanden');
+                    return;
+                }
+                let logTxt = '';
+                logs.sort((a, b) => a.createdAt - b.createdAt);
+                for (const log of logs) {
+                    logTxt += logToString(log);
+                }
+                container.innerHTML = `<div class="row mt-3">
+                    <div class="col-12">
+                        <div class="shadow">
+                            <pre class="text-wrap" style="font-size: 14px;">${logTxt}</pre>
+                        </div>
+                    </div>
+                </div>`;
+
+                socket.emit('joinServerLogsUpdates', server._id);
+                socket.emit('joinUIUpdates', 'server');
+                onPageLeave(() => {
+                    socket.emit('leaveUIUpdates', 'server');
+                    socket.emit('leaveServerLogsUpdates', server._id);
+                });
+            });
+        });
+    });
+
+    function logToString(log: ServerLog) {
+        log.content = log.content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        log.content = log.content.replace(/\n/g, '<br>');
+        return `<span class="${log.logLevel === 'error' ? 'text-danger' : log.logLevel === 'warn' ? 'text-warning' : ''}">${new Date(
+            log.createdAt,
+        ).toLocaleString()}: ${log.logLevel} - ${log.content}</span><br>`;
+    }
+
+    socket.on('serverLog', (log: ServerLog) => {
+        if (!isPageActive) return;
+        if (!server || log.serverID !== server._id) {
+            return;
+        }
+        const container = document.getElementById('container')!;
+        container.querySelector('pre')!.innerHTML += logToString(log);
+    });
+
+    function serverStatusBadge(server: SSLServer) {
+        return `<span style="font-size:14px;" class="badge ms-3 ${server.online ? 'text-bg-success">Online' : 'text-bg-danger">Offline'}</span>`;
+    }
+
+    socket.on('serversUpdate', (servers: SSLServer[]) => {
+        if (!isPageActive) return;
+        if (!server) {
+            return;
+        }
+        for (const server_ of servers) {
+            if (server_._id === server._id) {
+                server = server_;
+                document.getElementById('page-title')!.innerHTML = `Logs für ${server.name} ${serverStatusBadge(server)}`;
+                break;
+            }
+        }
+    });
+</script>

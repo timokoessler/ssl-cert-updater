@@ -1,0 +1,36 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout pageType={'auth'}>
+    <div class="card card-md shadow">
+        <div class="card-body">
+            <h2 class="h2 text-center mb-4">E-Mail-Adresse ändern</h2>
+            <div class="alert alert-danger mt-2 mb-3" style="display:none;" id="errorAlert"></div>
+            <div class="alert alert-success mt-2 mb-3" style="display:none;" id="successAlert"></div>
+        </div>
+    </div>
+</BaseLayout>
+
+<style></style>
+
+<script>
+    import { onPageLoad } from '@scripts/router';
+
+    onPageLoad(async () => {
+        const successAlert = document.getElementById('successAlert')!;
+        const errorAlert = document.getElementById('errorAlert')!;
+
+        const response = await fetch('/api' + window.location.pathname, {
+            method: 'GET',
+        });
+        const text = await response.text();
+        if (response.status === 200) {
+            successAlert.innerHTML = text;
+            successAlert.style.display = 'block';
+            return;
+        }
+        errorAlert.innerHTML = text;
+        errorAlert.style.display = 'block';
+    });
+</script>

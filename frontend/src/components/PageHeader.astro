@@ -1,0 +1,33 @@
+---
+interface Props {
+    visible?: boolean;
+    preTitle: string;
+    title: string;
+}
+
+const { visible = true, preTitle, title } = Astro.props;
+---
+
+<div class="page-header d-print-none" id="page-header" style={visible ? '' : 'display:none;'}>
+    <div class="container-xl">
+        <div id="page-select-container"></div>
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <div class="page-pretitle" id="page-pretitle">
+                    {preTitle}
+                </div>
+                <h2 class="page-title" id="page-title">
+                    {title}
+                </h2>
+            </div>
+            <!-- Page title actions -->
+            <div class="col-auto ms-auto d-print-none">
+                <div class="btn-list">
+                    <slot />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style></style>
