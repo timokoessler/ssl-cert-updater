@@ -67,21 +67,3 @@ export async function decryptLEAccount(
     }
     return account;
 }
-
-export async function encryptDNSProvider(dnsProvider: DNSProvider): Promise<DNSProvider | undefined> {
-    const provider = { ...dnsProvider };
-    provider.apiPassword = await encryptAES(provider.apiPassword, provider.customerNumber);
-    if (!provider.apiPassword) {
-        return undefined;
-    }
-    return provider;
-}
-
-export async function decryptDNSProvider(dnsProvider: Document<unknown, null, DNSProvider> & DNSProvider): Promise<DNSProvider | undefined> {
-    const provider = { ...dnsProvider.toObject() };
-    provider.apiPassword = await decryptAES(provider.apiPassword, provider.customerNumber);
-    if (!provider.apiPassword) {
-        return undefined;
-    }
-    return provider;
-}

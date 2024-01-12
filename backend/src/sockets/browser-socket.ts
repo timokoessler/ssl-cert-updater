@@ -4,9 +4,8 @@ import { checkAuthToken, generateRandomSalt } from '../core/auth';
 import { createDocument, deleteDocument, deleteDocumentQuery, deleteSSLCertFromConfigs, getDocument, getDocuments, saveDocument } from '../core/dbHelper';
 import { createLetsEncryptAccount, getSSLCertInfo, requestLetsEncryptCert, revokeCert } from '../core/acme';
 import isEmail from 'validator/lib/isEmail';
-import { testDNSProvider } from '../core/dns';
 import { v4 as uuidv4 } from 'uuid';
-import { decryptDNSProvider, decryptLEAccount, encryptAES, encryptDNSProvider } from '../core/aes';
+import { decryptLEAccount, encryptAES } from '../core/aes';
 import isUUID from 'validator/lib/isUUID';
 import { sha512, validateServerConfig } from '../utils';
 import { latestClientVersion } from '../constants';
@@ -21,7 +20,6 @@ interface ServerToClientEvents {
     certRequestLog: (log: CertRequestLog) => void;
     serversUpdate: (servers: SSLServer[]) => void;
     sslCertsUpdate: (certs: SSLCert[]) => void;
-    dnsProvidersUpdate: (providers: DNSProvider[]) => void;
     letsEncryptAccountsUpdate: (accounts: LetsEncryptAccount[]) => void;
     serverLog: (log: ServerLog) => void;
     runningCertRequestsUpdate: (requests: RunningCertRequest[]) => void;
@@ -30,14 +28,7 @@ interface ServerToClientEvents {
 interface ClientToServerEvents {
     getLetsEncryptAccounts: (cb: (accounts: LetsEncryptAccount[]) => void) => void;
     createLetsEncryptAccount: (email: string, cb: (success: boolean, data: string) => void) => void;
-    getDNSProviders: (cb: (providers: DNSProvider[]) => void) => void;
-    createDNSProvider: (provider: DNSProvider, cb: (success: boolean, data: string) => void) => void;
-    requestLetsEncryptCert: (
-        accountID: string,
-        domains: string[],
-        dnsProviderID: string,
-        cb: (success: boolean, errorMsg?: string, id?: string) => void,
-    ) => void;
+    requestLetsEncryptCert: (accountID: string, domains: string[], cb: (success: boolean, errorMsg?: string, id?: string) => void) => void;
     getRunningCertRequests: (cb: (requests: RunningCertRequest[]) => void) => void;
     getCertRequestLogs: (certID: string, cb: (logs: CertRequestLog[]) => void) => void;
     getSSLCertList: (cb: (certs: SSLCert[]) => void) => void;
@@ -60,7 +51,6 @@ interface ClientToServerEvents {
         cb: (responseCode: number) => void,
     ) => void;
     deleteServer: (id: string, cb: (error: string) => void) => void;
-    modifyDNSProvider: (provider: DNSProvider, cb: (success: boolean, errorMsg?: string) => void) => void;
     removeSSLCert: (id: string, revoke: boolean, revokeReason: number, cb: (success: boolean, errorMsg?: string) => void) => void;
 }
 
@@ -143,55 +133,7 @@ export function initWebSocket(ns_) {
             }
             cb(account.success, account.id);
         });
-        socket.on('createDNSProvider', async (provider, cb) => {
-            if (typeof cb !== 'function') {
-                return;
-            }
-            if (typeof provider !== 'object' || provider === null) {
-                cb(false, 'Ungültige Eingabe');
-                return;
-            }
-            if (provider.type !== 'netcup') {
-                cb(false, 'DNS Provider wird nicht unterstützt');
-                return;
-            }
-            if (typeof provider.customerNumber !== 'string' || !provider.customerNumber.length || !/^[0-9]+$/.test(provider.customerNumber)) {
-                cb(false, 'Ungültige Kundennummer');
-                return;
-            }
-            if (typeof provider.apiKey !== 'string' || !provider.apiKey.length) {
-                cb(false, 'Ungültiger API-Key');
-                return;
-            }
-            if (typeof provider.apiPassword !== 'string' || !provider.apiPassword.length) {
-                cb(false, 'Ungültiges API-Passwort');
-                return;
-            }
-            const existingProvider = await getDocument<DNSProvider>('DNSProvider', { type: provider.type, customerNumber: provider.customerNumber });
-            if (existingProvider) {
-                cb(false, 'DNS Provider mit dieser Kundennummer existiert bereits');
-                return;
-            }
-            const testResult = await testDNSProvider(provider);
-            if (!testResult.success) {
-                cb(false, testResult.errorMsg);
-                return;
-            }
-            provider._id = uuidv4();
-            provider.createdAt = Date.now();
-            const encryptedProvider = await encryptDNSProvider(provider);
-            if (!encryptedProvider) {
-                cb(false, 'Verschlüsselung fehlgeschlagen');
-                return;
-            }
-            const dbResult = await createDocument('DNSProvider', encryptedProvider);
-            if (!dbResult) {
-                cb(false, 'Datenbankfehler');
-                return;
-            }
-            cb(true, provider._id);
-        });
-        socket.on('requestLetsEncryptCert', async (accountID, domains, dnsProviderID, cb) => {
+        socket.on('requestLetsEncryptCert', async (accountID, domains, cb) => {
             if (typeof cb !== 'function') {
                 return;
             }
@@ -199,11 +141,7 @@ export function initWebSocket(ns_) {
                 cb(false, 'Ungültige LetsEncrypt Account ID');
                 return;
             }
-            if (typeof dnsProviderID !== 'string' || !isUUID(dnsProviderID)) {
-                cb(false, 'Ungültige DNS Provider ID');
-                return;
-            }
-            if (!Array.isArray(domains) || !isUUID(dnsProviderID)) {
+            if (!Array.isArray(domains)) {
                 cb(false, 'Keine Domains angegeben');
                 return;
             }
@@ -212,21 +150,10 @@ export function initWebSocket(ns_) {
                 cb(false, 'Account nicht gefunden');
                 return;
             }
-            const dnsProvider = await getDocument<DNSProvider>('DNSProvider', { _id: dnsProviderID });
-            if (!dnsProvider) {
-                cb(false, 'DNS Provider nicht gefunden');
-                return;
-            }
 
             const decryptLetsEncryptAccount = await decryptLEAccount(account);
             if (!decryptLetsEncryptAccount) {
                 cb(false, 'Entschlüsselung des LetsEncrypt Accounts fehlgeschlagen');
-                return;
-            }
-
-            const decryptedProvider = await decryptDNSProvider(dnsProvider);
-            if (!decryptedProvider) {
-                cb(false, 'Entschlüsselung des DNS Providers fehlgeschlagen');
                 return;
             }
 
@@ -240,7 +167,7 @@ export function initWebSocket(ns_) {
 
             newCertRequestLog('info', `Starte die Zertifikatsanfrage für ${domains.join(', ')}`, id);
 
-            const requestResult = await requestLetsEncryptCert(id, decryptLetsEncryptAccount, domains, decryptedProvider);
+            const requestResult = await requestLetsEncryptCert(id, decryptLetsEncryptAccount, domains);
 
             await deleteDocumentQuery('RunningCertRequest', { _id: id });
 
@@ -268,7 +195,6 @@ export function initWebSocket(ns_) {
                 altNames: domains,
                 type: 'letsencrypt',
                 letsencryptAccountID: accountID,
-                dnsProviderID: dnsProviderID,
                 cert: requestResult.cert,
                 intermediateCert: requestResult.intermediateCert,
                 rootCA: requestResult.rootCA,
@@ -317,18 +243,6 @@ export function initWebSocket(ns_) {
                 cert.rootCA = undefined;
             }
             cb(certs);
-            return;
-        });
-        socket.on('getDNSProviders', async (cb) => {
-            if (typeof cb !== 'function') {
-                return;
-            }
-            const providers = await getDocuments<DNSProvider>('DNSProvider', {});
-            for (const provider of providers) {
-                provider.apiKey = undefined;
-                provider.apiPassword = undefined;
-            }
-            cb(providers);
             return;
         });
         socket.on('createServer', async (name, checkIP, cb) => {
@@ -535,66 +449,6 @@ export function initWebSocket(ns_) {
             cb(undefined);
             return;
         });
-        socket.on('modifyDNSProvider', async (newProvider, cb) => {
-            if (typeof cb !== 'function') {
-                return;
-            }
-            if (typeof newProvider !== 'object' || newProvider === null) {
-                cb(false, 'Ungültige Eingabe');
-                return;
-            }
-            if (newProvider.type !== 'netcup') {
-                cb(false, 'DNS Provider wird nicht unterstützt');
-                return;
-            }
-            if (typeof newProvider.customerNumber !== 'string' || !newProvider.customerNumber.length || !/^[0-9]+$/.test(newProvider.customerNumber)) {
-                cb(false, 'Ungültige Kundennummer');
-                return;
-            }
-            if (typeof newProvider.apiKey !== 'string' || !newProvider.apiKey.length) {
-                cb(false, 'Ungültiger API-Key');
-                return;
-            }
-            if (typeof newProvider.apiPassword !== 'string' || !newProvider.apiPassword.length) {
-                cb(false, 'Ungültiges API-Passwort');
-                return;
-            }
-            const provider = await getDocument<DNSProvider>('DNSProvider', { _id: newProvider._id });
-            if (!provider) {
-                cb(false, 'DNS Provider nicht gefunden');
-                return;
-            }
-
-            const providerWithSameCustomerNumber = await getDocument<DNSProvider>('DNSProvider', {
-                type: newProvider.type,
-                customerNumber: newProvider.customerNumber,
-            });
-            if (providerWithSameCustomerNumber && providerWithSameCustomerNumber._id !== provider._id) {
-                cb(false, 'Es existiert bereits ein DNS Provider mit dieser Kundennummer');
-                return;
-            }
-            const testResult = await testDNSProvider(newProvider);
-            if (!testResult.success) {
-                cb(false, testResult.errorMsg);
-                return;
-            }
-
-            provider.customerNumber = newProvider.customerNumber;
-            provider.apiKey = newProvider.apiKey;
-            provider.apiPassword = await encryptAES(newProvider.apiPassword, provider.customerNumber);
-            if (!provider.apiPassword) {
-                cb(false, 'Verschlüsselung fehlgeschlagen');
-                return;
-            }
-
-            const dbResult = await saveDocument(provider);
-            if (!dbResult) {
-                cb(false, 'Datenbankfehler');
-                return;
-            }
-
-            cb(true, '');
-        });
         socket.on('removeSSLCert', async (id, revoke, revokeReason, cb) => {
             if (typeof cb !== 'function') {
                 return;
@@ -677,7 +531,7 @@ async function getSocketsForGroup(roomID: string) {
 }
 
 export function getUpdateUIEventTypes(): UIUpdateEventType[] {
-    return ['server', 'sslcert', 'dnsprovider', 'letsencryptaccount', 'runningcertrequest'];
+    return ['server', 'sslcert', 'letsencryptaccount', 'runningcertrequest'];
 }
 
 export async function updateUIEvent(type: UIUpdateEventType) {
@@ -696,14 +550,6 @@ export async function updateUIEvent(type: UIUpdateEventType) {
             }
             const certs = await getDocuments<SSLCert>('SSLCert', {});
             ns.to('ui-updates-sslcert').emit('sslCertsUpdate', certs);
-            return;
-        }
-        if (type === 'dnsprovider') {
-            if (!(await getSocketsForGroup('ui-updates-dnsprovider'))) {
-                return;
-            }
-            const providers = await getDocuments<DNSProvider>('DNSProvider', {});
-            ns.to('ui-updates-dnsprovider').emit('dnsProvidersUpdate', providers);
             return;
         }
         if (type === 'letsencryptaccount') {

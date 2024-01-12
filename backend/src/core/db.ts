@@ -7,11 +7,11 @@ let Authenticator: Model<Authenticator>;
 let FailedLoginAttempt: Model<FailedLoginAttempt>;
 let LetsEncryptAccount: Model<LetsEncryptAccount>;
 let SSLCert: Model<SSLCert>;
-let DNSProvider: Model<DNSProvider>;
 let Server: Model<SSLServer>;
 let ServerLog: Model<ServerLog>;
 let CertRequestLog: Model<CertRequestLog>;
 let RunningCertRequest: Model<RunningCertRequest>;
+let DNSRecord: Model<DNSRecord>;
 
 let isConnected = false;
 
@@ -77,7 +77,6 @@ async function init(logConnected = true) {
         altNames: { type: [String], required: true },
         type: { type: String, required: true },
         letsencryptAccountID: { type: String, required: false },
-        dnsProviderID: { type: String, required: false },
         cert: { type: String, required: true },
         key: { type: String, required: true },
         intermediateCert: { type: String, required: true },
@@ -89,15 +88,14 @@ async function init(logConnected = true) {
     });
     SSLCert = model<SSLCert>('SSLCert', SSLCertSchema);
 
-    const DNSProviderSchema = new Schema<DNSProvider>({
+    const dnsRecordSchema = new Schema<DNSRecord>({
         _id: { type: String, required: true },
-        type: { type: String, required: true },
-        customerNumber: { type: String, required: true },
-        apiKey: { type: String, required: true },
-        apiPassword: { type: String, required: true },
-        createdAt: { type: Number, required: true },
+        certID: { type: String, required: true },
+        name: { type: String, required: true },
+        type: { type: Number, required: true },
+        data: { type: String, required: true },
     });
-    DNSProvider = model<DNSProvider>('DNSProvider', DNSProviderSchema);
+    DNSRecord = model<DNSRecord>('DNSRecord', dnsRecordSchema);
 
     const ServerConfigSSLCertSchema = new Schema<ServerConfigSSLCert>({
         _id: { type: String, required: true },
@@ -205,9 +203,6 @@ export default {
     SSLCert: () => {
         return SSLCert;
     },
-    DNSProvider: () => {
-        return DNSProvider;
-    },
     Server: () => {
         return Server;
     },
@@ -222,6 +217,9 @@ export default {
     },
     RunningCertRequest: () => {
         return RunningCertRequest;
+    },
+    DNSRecord: () => {
+        return DNSRecord;
     },
     close: async (force = false) => {
         await connection.close(force);

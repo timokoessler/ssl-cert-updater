@@ -10,8 +10,8 @@ declare global {
         | 'FailedLoginAttempt'
         | 'LetsEncryptAccount'
         | 'SSLCert'
-        | 'DNSProvider'
         | 'Server'
+        | 'DNSRecord'
         | 'ServerLog'
         | 'CertRequestLog'
         | 'RunningCertRequest';
@@ -77,13 +77,20 @@ declare global {
         createdAt: number;
     };
 
+    type DNSRecord = {
+        _id: string;
+        certID: string;
+        name: string;
+        type: number;
+        data: string;
+    };
+
     type SSLCert = {
         _id: string;
         commonName: string;
         altNames: string[];
         type: 'letsencrypt' | 'custom';
         letsencryptAccountID?: string;
-        dnsProviderID?: string;
         cert: string;
         intermediateCert: string;
         rootCA: string;
@@ -92,50 +99,6 @@ declare global {
         renewedAt: number;
         expiresAt: number;
         autoRenew: boolean;
-    };
-
-    type SupportedDNSProvider = 'netcup';
-
-    type DNSProvider = {
-        _id: string;
-        type: SupportedDNSProvider;
-        customerNumber: string;
-        apiKey: string;
-        apiPassword: string;
-        createdAt: number;
-    };
-
-    type NetcupAPIAction = 'infoDnsRecords' | 'infoDnsZone' | 'login' | 'logout' | 'updateDnsRecords' | 'updateDnsZone';
-
-    type NetcupAPIResponse = {
-        serverrequestid: string;
-        clientrequestid: string;
-        action: NetcupAPIAction;
-        status: 'error' | 'started' | 'pending' | 'success' | 'warning';
-        statuscode: number;
-        shortmessage: string;
-        longmessage: string;
-        responsedata: unknown;
-    };
-
-    type NetcupDNSZone = {
-        name: string;
-        ttl: string;
-        serial: string;
-        refresh: string;
-        retry: string;
-        expire: string;
-        dnssecstatus: boolean;
-    };
-
-    type NetcupDNSRecord = {
-        id?: string;
-        hostname: string;
-        type: string;
-        priority?: string;
-        destination: string;
-        deleterecord: boolean;
-        state?: string;
     };
 
     type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -171,7 +134,7 @@ declare global {
         caPath?: string; // Not implemented
     };
 
-    type UIUpdateEventType = 'server' | 'sslcert' | 'dnsprovider' | 'letsencryptaccount' | 'runningcertrequest';
+    type UIUpdateEventType = 'server' | 'sslcert' | 'letsencryptaccount' | 'runningcertrequest';
 
     type ServerLog = {
         serverID: string;

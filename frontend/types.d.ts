@@ -1,24 +1,13 @@
 export {};
 
 declare global {
-    type UIUpdateEventType = 'servers' | 'sslcerts' | 'dnsprovider' | 'letsencryptaccounts';
+    type UIUpdateEventType = 'servers' | 'sslcerts' | 'letsencryptaccounts';
 
     type LetsEncryptAccount = {
         _id: string;
         email: string;
         accountKey?: string;
         accountUrl?: string;
-        createdAt: number;
-    };
-
-    type SupportedDNSProvider = 'netcup';
-
-    type DNSProvider = {
-        _id: string;
-        type: SupportedDNSProvider;
-        customerNumber: string;
-        apiKey?: string;
-        apiPassword?: string;
         createdAt: number;
     };
 

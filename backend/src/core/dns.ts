@@ -1,51 +1,113 @@
 import acme from 'acme-client';
 import { DnsChallenge } from 'acme-client/types/rfc8555';
-import { NetcupDNS } from './dns-api/netcup';
 // Type definitions for dns2 are incorrect, so they are not installed
 // @ts-expect-error Wrong type definitions
 import { UDPClient } from 'dns2';
 import { newCertRequestLog } from '../sockets/browser-socket';
-import { setTimeout } from 'timers/promises';
 import { log } from './log';
+import dns2 from 'dns2';
+import isFQDN from 'validator/lib/isFQDN';
+import { createDocument, deleteDocumentsQuery, getDocuments } from './dbHelper';
+import { v4 as uuidv4 } from 'uuid';
+
+const dnsServerPort = 5333;
+
+export async function initDNSServer() {
+    const dnsServer = dns2.createServer({
+        udp: true,
+        tcp: true,
+        handle: async (request, send) => {
+            const response = dns2.Packet.createResponseFromRequest(request);
+
+            for (const question of request.questions) {
+                const { name, type } = question as dns2.DnsQuestion & {
+                    type: number;
+                };
+                if (type !== dns2.Packet.TYPE.TXT) {
+                    continue;
+                }
+                if (
+                    !isFQDN(name, {
+                        require_tld: true,
+                        allow_underscores: true,
+                        allow_trailing_dot: true,
+                        allow_wildcard: false,
+                    })
+                ) {
+                    continue;
+                }
+                const lookupName = name.endsWith('.') ? name.slice(0, -1).toLowerCase() : name.toLowerCase();
+
+                response.answers.push({
+                    name,
+                    type: dns2.Packet.TYPE.TXT,
+                    class: dns2.Packet.CLASS.IN,
+                    ttl: 300,
+                    data: 'sslup',
+                });
+
+                const dnsRecords = await getDocuments<DNSRecord>('DNSRecord', { name: lookupName, type });
+                if (Array.isArray(dnsRecords)) {
+                    for (const dnsRecord of dnsRecords) {
+                        response.answers.push({
+                            name,
+                            type: dnsRecord.type,
+                            class: dns2.Packet.CLASS.IN,
+                            ttl: 10,
+                            data: dnsRecord.data,
+                        });
+                    }
+                }
+            }
+            send(response);
+        },
+    });
+
+    dnsServer.on('requestError', (err) => {
+        log('error', `Error on dns request: ${err.message}`);
+    });
+
+    dnsServer.on('listening', () => {
+        log('info', `DNS server listening on port ${dnsServerPort}`);
+    });
+
+    dnsServer.on('close', () => {
+        log('error', 'DNS server closed');
+        throw new Error('FATAL: DNS server closed');
+    });
+
+    dnsServer.listen({
+        udp: dnsServerPort,
+        tcp: dnsServerPort,
+    });
+}
 
 export async function createDNSChallenge(
     id: string,
     authz: acme.Authorization,
     challenge: DnsChallenge,
     keyAuthorization: string,
-    dnsProvider: DNSProvider,
     index: number,
     total: number,
 ): Promise<{ success: boolean; errorMsg?: string }> {
+    console.log(authz);
     const domain = authz.identifier.value;
-    newCertRequestLog('info', `Erstelle DNS Record _acme-challenge.${domain} mit Wert ${keyAuthorization} (${index + 1}/${total})`, id);
+    newCertRequestLog('info', `Erstelle DNS Record _acme-challenge.${domain} (${index + 1}/${total})`, id);
 
-    if (dnsProvider.type !== 'netcup') {
-        return { success: false, errorMsg: 'DNS Provider wird nicht unterstützt' };
+    const name = `_acme-challenge.${domain}`;
+    const dnsRecordID = uuidv4();
+
+    if (
+        !(await createDocument<DNSRecord>('DNSRecord', {
+            _id: dnsRecordID,
+            certID: id,
+            name,
+            type: dns2.Packet.TYPE.TXT,
+            data: keyAuthorization,
+        }))
+    ) {
+        return { success: false, errorMsg: 'Speichern des DNS Records fehlgeschlagen' };
     }
-    const netcupDNS = new NetcupDNS(dnsProvider.customerNumber, dnsProvider.apiKey, dnsProvider.apiPassword);
-    const loginResult = await netcupDNS.login();
-    if (!loginResult.success) {
-        return { success: false, errorMsg: loginResult.errorMsg };
-    }
-
-    const hostname = domainHasSubdomain(domain) ? `_acme-challenge.${domainToSubdomain(domain)}` : '_acme-challenge';
-
-    const createResult = await netcupDNS.updateDnsRecords(domain, [
-        {
-            hostname: hostname,
-            type: 'TXT',
-            destination: keyAuthorization,
-            deleterecord: false,
-        },
-    ]);
-
-    if (!createResult.success) {
-        netcupDNS.logout();
-        return { success: false, errorMsg: createResult.errorMsg };
-    }
-
-    netcupDNS.logout();
 
     return { success: true };
 }
@@ -55,49 +117,14 @@ export async function removeDNSChallenge(
     authz: acme.Authorization,
     challenge: DnsChallenge,
     keyAuthorization: string,
-    dnsProvider: DNSProvider,
 ): Promise<{ success: boolean; errorMsg?: string }> {
     const domain = authz.identifier.value;
     newCertRequestLog('info', `Entferne DNS Record _acme-challenge.${domain}`, id);
 
-    if (dnsProvider.type !== 'netcup') {
-        return { success: false, errorMsg: 'DNS Provider wird nicht unterstützt' };
+    const name = `_acme-challenge.${domain}`;
+    if (!(await deleteDocumentsQuery<DNSRecord>('DNSRecord', { certID: id, name, data: keyAuthorization }))) {
+        return { success: false, errorMsg: 'Entfernen des DNS Records fehlgeschlagen' };
     }
-    const netcupDNS = new NetcupDNS(dnsProvider.customerNumber, dnsProvider.apiKey, dnsProvider.apiPassword);
-    const loginResult = await netcupDNS.login();
-    if (!loginResult.success) {
-        return { success: false, errorMsg: loginResult.errorMsg };
-    }
-
-    const dnsRecords = await netcupDNS.infoDnsRecords(domain);
-    if (!dnsRecords.success) {
-        netcupDNS.logout();
-        return { success: false, errorMsg: dnsRecords.errorMsg };
-    }
-
-    const hostname = domainHasSubdomain(domain) ? `_acme-challenge.${domainToSubdomain(domain)}` : '_acme-challenge';
-
-    const record = dnsRecords.records.find((record) => record.hostname === hostname && record.destination === keyAuthorization);
-    if (!record) {
-        netcupDNS.logout();
-        return { success: false, errorMsg: 'DNS Record nicht gefunden' };
-    }
-
-    const deleteResult = await netcupDNS.updateDnsRecords(domain, [
-        {
-            id: record.id,
-            hostname: record.hostname,
-            type: record.type,
-            destination: record.destination,
-            deleterecord: true,
-        },
-    ]);
-    if (!deleteResult.success) {
-        netcupDNS.logout();
-        return { success: false, errorMsg: deleteResult.errorMsg };
-    }
-
-    netcupDNS.logout();
 
     return { success: true };
 }
@@ -106,74 +133,47 @@ export async function verifyDnsChallenge(
     id: string,
     authz: acme.Authorization,
     keyAuthorization: string,
-    ac: AbortController,
     index: number,
     total: number,
 ): Promise<{ success: boolean; errorMsg?: string }> {
     const domain = authz.identifier.value;
     log('debug', `Verifying DNS record _acme-challenge.${domain} with value ${keyAuthorization}`);
+
     const resolve = UDPClient();
 
-    let nsRecords = await resolve(domain, 'NS');
-    if (nsRecords.answers.length === 0) {
-        nsRecords = await resolve(domainToTLD(domain), 'NS');
-        if (nsRecords.answers.length === 0) {
-            return { success: false, errorMsg: `NS Record für ${domain} nicht gefunden` };
-        }
+    const name = `_acme-challenge.${domain}`;
+
+    const txtRecords = await resolve(name, 'TXT');
+    if (txtRecords.answers.length === 0) {
+        return { success: false, errorMsg: `TXT Record für ${name} nicht gefunden` };
     }
-    const nameServers: string[] = nsRecords.answers.map((answer) => answer.ns);
-    newCertRequestLog('info', `Verwende Nameserver ${nameServers.sort().join(', ')} zur Überprüfung von Challenge ${index + 1}/${total}`, id);
 
-    let retryCount = 0;
-
-    while (nameServers.length && retryCount < 80 && !ac.signal.aborted) {
-        for (const nameServer of nameServers) {
-            const resolveTxt = UDPClient({ dns: nameServer });
-            const txtDNSRecords = await resolveTxt(`_acme-challenge.${domain}`, 'TXT');
-            if (txtDNSRecords.answers.length > 0) {
-                log('debug', `Found ${txtDNSRecords.answers.length} TXT records for _acme-challenge.${domain} on NS ${nameServer} (${keyAuthorization})`);
-                for (const answer of txtDNSRecords.answers) {
-                    if (answer.name === `_acme-challenge.${domain}` && answer.data === keyAuthorization) {
-                        log('debug', `Found TXT record _acme-challenge.${domain} with value ${answer.data} on NS ${nameServer}`);
-                        newCertRequestLog('info', `DNS Eintrag _acme-challenge.${domain} auf Nameserver ${nameServer} gefunden (${index + 1}/${total})`, id);
-                        nameServers.splice(nameServers.indexOf(nameServer), 1);
-                        if (!nameServers.length) {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        if (nameServers.length && retryCount < 80 && !ac.signal.aborted) {
-            retryCount++;
-            if (retryCount === 1 || retryCount % 4 === 0) {
-                newCertRequestLog('info', `Warte auf DNS-Einträge für ${domain}. Wartezeit: ${((retryCount - 1) * 0.5).toFixed(0)}min von max. 40min`, id);
-            }
-            await setTimeout(30000, null, { signal: ac.signal });
+    for (const txtRecord of txtRecords.answers) {
+        if (txtRecord.data === keyAuthorization) {
+            newCertRequestLog('info', `DNS-Eintrag ${name} erfolgreich überprüft (Challenge ${index + 1}/${total})`, id);
+            return { success: true };
         }
     }
 
-    if (nameServers.length > 0) {
-        return { success: false, errorMsg: 'TXT Record nicht gefunden' };
-    }
-    newCertRequestLog('info', `Alle DNS-Einträge für ${domain} gefunden (Challenge ${index + 1}/${total})`, id);
-
-    await setTimeout(5000, null, { signal: ac.signal });
-
-    return { success: true };
+    return { success: false, errorMsg: `TXT Record mit dem Wert ${keyAuthorization} für ${name} konnte nicht gefunden werden.` };
 }
 
-export async function testDNSProvider(dnsProvider: DNSProvider): Promise<{ success: boolean; errorMsg?: string }> {
-    if (dnsProvider.type !== 'netcup') {
-        return { success: false, errorMsg: 'DNS Provider wird nicht unterstützt' };
+export async function checkDNSConfiguration(domain: string): Promise<{ success: boolean; errorMsg?: string }> {
+    const resolve = UDPClient();
+
+    const name = `_acme-challenge.${domain}`;
+    const txtRecords = await resolve(name, 'TXT');
+    if (txtRecords.answers.length === 0) {
+        return { success: false };
     }
-    const netcupDNS = new NetcupDNS(dnsProvider.customerNumber, dnsProvider.apiKey, dnsProvider.apiPassword);
-    const loginResult = await netcupDNS.login();
-    if (!loginResult.success) {
-        return { success: false, errorMsg: loginResult.errorMsg };
+
+    for (const txtRecord of txtRecords.answers) {
+        if (txtRecord.data === 'sslup') {
+            return { success: true };
+        }
     }
-    netcupDNS.logout();
-    return { success: true };
+
+    return { success: false };
 }
 
 export function domainToTLD(domain: string): string {
@@ -182,8 +182,7 @@ export function domainToTLD(domain: string): string {
 }
 
 export function domainHasSubdomain(domain: string): boolean {
-    const parts = domain.split('.');
-    return parts.length > 2;
+    return domain.split('.').length > 2;
 }
 
 export function domainToSubdomain(domain: string): string {

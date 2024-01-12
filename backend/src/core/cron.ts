@@ -2,7 +2,7 @@ import { Document } from 'mongoose';
 import { newCertRequestLog } from '../sockets/browser-socket';
 import { cleanUpOnlineServers, sendUpdateToServer } from '../sockets/client-socket';
 import { getSSLCertInfo, requestLetsEncryptCert } from './acme';
-import { decryptDNSProvider, decryptLEAccount, encryptAES } from './aes';
+import { decryptLEAccount, encryptAES } from './aes';
 import { clearAllFailedLoginAttempts } from './auth';
 import { createDocument, deleteDocumentQuery, deleteDocumentsQuery, getDocument, getDocuments, saveDocument } from './dbHelper';
 import { log } from './log';
@@ -127,23 +127,13 @@ async function renewCert(sslCert: Document<unknown, null, SSLCert> & SSLCert): P
             return { success: false, errorMsg: 'Entschlüsselung des LetsEncryptAccounts ist fehlgeschlagen' };
         }
 
-        const dnsProvider = await getDocument<DNSProvider>('DNSProvider', { _id: sslCert.dnsProviderID });
-        if (!dnsProvider) {
-            return { success: false, errorMsg: 'DNSProvider konnte nicht gefunden werden' };
-        }
-
-        const decryptedProvider = await decryptDNSProvider(dnsProvider);
-        if (!decryptedProvider) {
-            return { success: false, errorMsg: 'Die Entschlüsselung des DNSProviders ist fehlgeschlagen' };
-        }
-
         await createDocument<RunningCertRequest>('RunningCertRequest', {
             _id: sslCert._id,
             altNames: sslCert.altNames,
             startedAt: Date.now(),
         });
 
-        const requestResult = await requestLetsEncryptCert(sslCert._id, decryptedLetsEncryptAccount, sslCert.altNames, decryptedProvider);
+        const requestResult = await requestLetsEncryptCert(sslCert._id, decryptedLetsEncryptAccount, sslCert.altNames);
 
         await deleteDocumentQuery('RunningCertRequest', { _id: sslCert._id });
 

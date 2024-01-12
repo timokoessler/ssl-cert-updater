@@ -14,21 +14,14 @@ export async function requestLetsEncryptCert(
     id: string,
     account: LetsEncryptAccount,
     domains: string[],
-    dnsProvider: DNSProvider,
 ): Promise<{ success: boolean; errorMsg?: string; cert?: string; key?: string; intermediateCert?: string; rootCA?: string; commonName?: string }> {
-    const ac = new AbortController();
-
     try {
         if (isDev()) {
-            newCertRequestLog('warn', 'Verwende LetsEncrypt Testserver, da die Anwendung nicht im Produktionsmodus läuft', id);
+            newCertRequestLog('warn', 'Verwende den LetsEncrypt Testserver, da die Anwendung nicht im Produktionsmodus läuft.', id);
         }
 
         if (domains.length === 0) {
             return { success: false, errorMsg: 'Keine Domains angegeben' };
-        }
-
-        if (dnsProvider.type !== 'netcup') {
-            return { success: false, errorMsg: 'DNS Provider wird nicht unterstützt' };
         }
 
         // Validate domains
@@ -78,7 +71,6 @@ export async function requestLetsEncryptCert(
                         authz,
                         challenge as DnsChallenge,
                         keyAuthorization,
-                        dnsProvider,
                         index,
                         authorizations.length,
                     );
@@ -90,7 +82,7 @@ export async function requestLetsEncryptCert(
                         );
                         throw new Error(createDNSChallengeSuccess.errorMsg);
                     }
-                    const verifyDNS = await verifyDnsChallenge(id, authz, keyAuthorization, ac, index, authorizations.length);
+                    const verifyDNS = await verifyDnsChallenge(id, authz, keyAuthorization, index, authorizations.length);
                     if (!verifyDNS.success) {
                         newCertRequestLog(
                             'error',
@@ -110,7 +102,7 @@ export async function requestLetsEncryptCert(
                 } finally {
                     // Clean up challenge response
                     try {
-                        const rmRes = await removeDNSChallenge(id, authz, challenge as DnsChallenge, keyAuthorization, dnsProvider);
+                        const rmRes = await removeDNSChallenge(id, authz, challenge as DnsChallenge, keyAuthorization);
                         if (!rmRes.success) {
                             newCertRequestLog('error', `Fehler beim Entfernen des DNS Records für ${authz.identifier.value}: ${rmRes.errorMsg}`, id);
                         }
@@ -162,9 +154,6 @@ export async function requestLetsEncryptCert(
 
         return { success: true, cert: certParts[0], key: key.toString(), intermediateCert: certParts[1], rootCA: certParts[2], commonName: commonName };
     } catch (err) {
-        if (!ac.signal.aborted) {
-            ac.abort();
-        }
         if (!err.message || !err.message.includes('busy')) {
             Sentry.captureException(err);
         }
