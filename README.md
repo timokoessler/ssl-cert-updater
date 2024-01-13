@@ -6,10 +6,6 @@ The client is available for linux, windows and mac os. The server and client are
 
 This repo contains an example config as well as a docker-compose.yml.
 
-## Building
-
-To build the complete project, run `npm ci && npm run build`.
-
 ## Deployment
 
 In production, you should always use the automatically created Docker image. Use the `docker-compose.yml` file as an example.  
@@ -34,4 +30,5 @@ The backend port is configured in the .env file and defaults to 3000.
 -   Client (auto) updates + update notification
 -   Improve dark mode
 -   2FA App support?
--   Standalone DNS-Mode - acting as a DNS server to support every DNS provider and reduce delays
+-   Translate to English
+-   Create documentation

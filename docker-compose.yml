@@ -1,5 +1,3 @@
-version: '3'
-
 services:
     ssl-cert-updater:
         image: git.tkoessler.de/timokoessler/ssl-cert-updater-next:latest
@@ -9,3 +7,4 @@ services:
             - ./config:/home/node/config
         ports:
             - '127.0.0.1:8081:3000'
+            - '{PUBLIC_IP}:53:5333/udp'
