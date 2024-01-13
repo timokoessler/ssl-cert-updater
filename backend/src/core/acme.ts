@@ -9,6 +9,7 @@ import { encryptLEAccount } from './aes';
 import { newCertRequestLog } from '../sockets/browser-socket';
 import { log } from './log';
 import { isDev } from '../constants';
+import { setTimeout } from 'timers/promises';
 
 export async function requestLetsEncryptCert(
     id: string,
@@ -82,11 +83,13 @@ export async function requestLetsEncryptCert(
                         );
                         throw new Error(createDNSChallengeSuccess.errorMsg);
                     }
+                    // Wait for DNS to propagate
+                    await setTimeout(10000);
                     const verifyDNS = await verifyDnsChallenge(id, authz, keyAuthorization, index, authorizations.length);
                     if (!verifyDNS.success) {
                         newCertRequestLog(
                             'error',
-                            `Fehler beim Verifizieren des DNS Records für Challenge ${index + 1}/${authorizations.length}: ${verifyDNS.errorMsg}}`,
+                            `Fehler beim Verifizieren des DNS Records für Challenge ${index + 1}/${authorizations.length}: ${verifyDNS.errorMsg}`,
                             id,
                         );
                         throw new Error(`Verify DNS: ${verifyDNS.errorMsg}`);

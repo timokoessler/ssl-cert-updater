@@ -12,6 +12,8 @@ import { latestClientVersion } from '../constants';
 import { log } from '../core/log';
 import { sendUpdateToServer } from './client-socket';
 import { getSocketIP } from './server';
+import { checkDNSConfiguration } from '../core/dns';
+import isFQDN from 'validator/lib/isFQDN';
 
 const lastCertRequestLogs = [];
 
@@ -29,6 +31,7 @@ interface ClientToServerEvents {
     getLetsEncryptAccounts: (cb: (accounts: LetsEncryptAccount[]) => void) => void;
     createLetsEncryptAccount: (email: string, cb: (success: boolean, data: string) => void) => void;
     requestLetsEncryptCert: (accountID: string, domains: string[], cb: (success: boolean, errorMsg?: string, id?: string) => void) => void;
+    checkDNSConfig: (domains: string[], cb: (status: { domain: string; success: boolean }[], destination: string) => void) => void;
     getRunningCertRequests: (cb: (requests: RunningCertRequest[]) => void) => void;
     getCertRequestLogs: (certID: string, cb: (logs: CertRequestLog[]) => void) => void;
     getSSLCertList: (cb: (certs: SSLCert[]) => void) => void;
@@ -504,6 +507,37 @@ export function initWebSocket(ns_) {
             }
             await deleteSSLCertFromConfigs(cert._id);
             cb(true);
+        });
+
+        socket.on('checkDNSConfig', async (domains, cb) => {
+            if (typeof cb !== 'function') {
+                return;
+            }
+            const hostname = process.env.URL.split('//')[1];
+            if (!Array.isArray(domains)) {
+                cb(undefined, hostname);
+                return;
+            }
+            const results = [];
+            for (const domain of domains) {
+                if (
+                    typeof domain !== 'string' ||
+                    !isFQDN(domain, {
+                        require_tld: true,
+                        allow_underscores: false,
+                        allow_trailing_dot: false,
+                        allow_wildcard: true,
+                    })
+                ) {
+                    cb(undefined, hostname);
+                    return;
+                }
+                results.push({
+                    domain,
+                    success: (await checkDNSConfiguration(domain)).success,
+                });
+            }
+            cb(results, hostname);
         });
     });
 }

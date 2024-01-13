@@ -66,7 +66,7 @@ if (cluster.isPrimary) {
         workers.push(cluster.fork());
     }
     workers.sort((a, b) => a.process.pid - b.process.pid);
-    workers[workers.length - 1].send('startCron');
+    workers[workers.length - 1].send('initialStartCron');
 
     cluster.on('exit', (worker) => {
         log('error', `Worker ${worker.process.pid} died`);
@@ -102,8 +102,10 @@ if (cluster.isPrimary) {
     }
 
     process.on('message', (message) => {
-        if (message === 'startCron') {
-            initCron();
+        if (message === 'initialStartCron') {
+            initCron(true);
+        } else if (message === 'startCron') {
+            initCron(false);
         }
     });
 

@@ -12,12 +12,16 @@ import { sendFailedCertRequestEmail, sendOfflineServerEmail, sendSuccessfullCert
 import { getOcspStatus } from './ocsp';
 
 let initialized = false;
-export async function initCron() {
+export async function initCron(firstStart: boolean) {
     if (initialized) {
         return;
     }
-    log('info', `Worker ${process.pid} is setting up cronjobs`);
     initialized = true;
+    if (firstStart) {
+        log('info', `Worker ${process.pid} is setting up cronjobs (initial application start)`);
+    } else {
+        log('info', `Worker ${process.pid} is setting up cronjobs (worker restart)`);
+    }
 
     CronJob.from({
         cronTime: '0 * * * * *',
@@ -36,6 +40,12 @@ export async function initCron() {
         },
         start: true,
     });
+
+    if (firstStart) {
+        log('info', 'Cleaning up database after initial application start');
+        deleteDocumentsQuery('RunningCertRequest', {});
+        deleteDocumentsQuery('DNSRecord', {});
+    }
 }
 
 function everyMinute() {

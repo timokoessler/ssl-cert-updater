@@ -45,7 +45,6 @@ export async function initDNSServer() {
                     ttl: 300,
                     data: 'sslup',
                 });
-
                 const dnsRecords = await getDocuments<DNSRecord>('DNSRecord', { name: lookupName, type });
                 if (Array.isArray(dnsRecords)) {
                     for (const dnsRecord of dnsRecords) {
@@ -90,11 +89,9 @@ export async function createDNSChallenge(
     index: number,
     total: number,
 ): Promise<{ success: boolean; errorMsg?: string }> {
-    console.log(authz);
-    const domain = authz.identifier.value;
-    newCertRequestLog('info', `Erstelle DNS Record _acme-challenge.${domain} (${index + 1}/${total})`, id);
+    const name = getAcmeHost(authz.identifier.value);
+    newCertRequestLog('info', `Erstelle DNS Record ${name} (${index + 1}/${total})`, id);
 
-    const name = `_acme-challenge.${domain}`;
     const dnsRecordID = uuidv4();
 
     if (
@@ -118,10 +115,9 @@ export async function removeDNSChallenge(
     challenge: DnsChallenge,
     keyAuthorization: string,
 ): Promise<{ success: boolean; errorMsg?: string }> {
-    const domain = authz.identifier.value;
-    newCertRequestLog('info', `Entferne DNS Record _acme-challenge.${domain}`, id);
+    const name = getAcmeHost(authz.identifier.value);
+    newCertRequestLog('info', `Entferne DNS Record ${name}`, id);
 
-    const name = `_acme-challenge.${domain}`;
     if (!(await deleteDocumentsQuery<DNSRecord>('DNSRecord', { certID: id, name, data: keyAuthorization }))) {
         return { success: false, errorMsg: 'Entfernen des DNS Records fehlgeschlagen' };
     }
@@ -136,13 +132,10 @@ export async function verifyDnsChallenge(
     index: number,
     total: number,
 ): Promise<{ success: boolean; errorMsg?: string }> {
-    const domain = authz.identifier.value;
-    log('debug', `Verifying DNS record _acme-challenge.${domain} with value ${keyAuthorization}`);
+    const name = getAcmeHost(authz.identifier.value);
+    log('debug', `Verifying DNS record ${name} with value ${keyAuthorization}`);
 
     const resolve = UDPClient();
-
-    const name = `_acme-challenge.${domain}`;
-
     const txtRecords = await resolve(name, 'TXT');
     if (txtRecords.answers.length === 0) {
         return { success: false, errorMsg: `TXT Record für ${name} nicht gefunden` };
@@ -161,7 +154,7 @@ export async function verifyDnsChallenge(
 export async function checkDNSConfiguration(domain: string): Promise<{ success: boolean; errorMsg?: string }> {
     const resolve = UDPClient();
 
-    const name = `_acme-challenge.${domain}`;
+    const name = getAcmeHost(domain);
     const txtRecords = await resolve(name, 'TXT');
     if (txtRecords.answers.length === 0) {
         return { success: false };
@@ -188,4 +181,8 @@ export function domainHasSubdomain(domain: string): boolean {
 export function domainToSubdomain(domain: string): string {
     const parts = domain.split('.');
     return parts.slice(0, parts.length - 2).join('.');
+}
+
+function getAcmeHost(domain: string): string {
+    return `_acme-challenge.${domain.startsWith('*.') ? domain.slice(2) : domain}`;
 }

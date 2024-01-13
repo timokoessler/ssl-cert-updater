@@ -69,7 +69,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     import autosize from 'autosize';
     import confetti from 'canvas-confetti';
     import { getWS } from '@scripts/socket';
-    import { onFirstPageLoad, onPageLoad } from '@scripts/router';
+    import { onPageLoad } from '@scripts/router';
     import { navigate } from 'astro:transitions/client';
 
     const selectGroup = (name: string, value: string, content: string, checked: boolean) => `<label class="form-selectgroup-item flex-fill">
@@ -83,7 +83,6 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     </label>`;
 
     let leAccountID: string;
-    let dnsProviderID: string;
 
     const socket = getWS();
     const isPageActive = () => window.location.pathname === '/newCert';
@@ -129,7 +128,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                         return;
                     }
                     leAccountID = accountID;
-                    selectDNSProvider();
+                    selectDomain();
                 });
             });
         });
@@ -196,115 +195,8 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                     return;
                 }
                 leAccountID = data;
-                selectDNSProvider();
-            });
-        });
-    }
-
-    function selectDNSProvider() {
-        const container = document.getElementById('container')!;
-        container.innerHTML = cardLoading('Lade DNS Provider');
-        socket.emit('getDNSProviders', async (providers: DNSProvider[]) => {
-            if (!isPageActive()) return;
-            if (!Array.isArray(providers)) {
-                container.innerHTML = errorAlert('Fehler beim Laden der DNS Provider');
-                return;
-            }
-            if (providers.length === 0) {
-                newDNSProvider();
-                return;
-            }
-            providers.push({
-                _id: 'new',
-                type: 'netcup',
-                customerNumber: 'Neuen DNS-Provider hinzufügen',
-                createdAt: 0,
-            });
-            container.innerHTML = `<label class="h2">DNS Provider auswählen</label>
-            <hr class="mt-0 mb-3">
-            <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
-                ${providers
-                    .map((provider, index) =>
-                        selectGroup('radio-dns-provider', provider._id, `${capitalizeFirstLetter(provider.type)}: ${provider.customerNumber}`, index === 0),
-                    )
-                    .join('')}
-            </div>
-            <div class="mt-2"><small>Bitte beachten Sie, dass die Domain, für die Sie ein Zertifikat erstellen möchten, bei dem ausgewählten DNS Provider in diesem Konto vorhanden sein muss.</small></div>
-            <button class="btn btn-primary mt-3 d-inline" id="nextBtn"><i class="ti ti-square-rounded-arrow-right-filled me-1"></i> Weiter</button>`;
-
-            document.getElementById('nextBtn')?.addEventListener('click', async () => {
-                const providerID = (document.querySelector('input[name="radio-dns-provider"]:checked') as HTMLInputElement).value;
-                if (providerID === 'new') {
-                    newDNSProvider();
-                    return;
-                }
-                dnsProviderID = providerID;
                 selectDomain();
             });
-        });
-    }
-
-    function newDNSProvider() {
-        const container = document.getElementById('container')!;
-        container.innerHTML = `<div class="h2">DNS-Provider hinzufügen</div>
-        <hr class="mt-0 mb-3">
-        <div class="mb-3">
-            <div class="form-label required">Anbieter</div>
-            <select class="form-select" disabled>
-                <option value="netcup">Netcup</option>
-            </select>
-        </div>
-        <div class="mb-3">
-            <div class="form-label required">Kunden-Nummer</div>
-            <input type="text" class="form-control" id="dnsCustomerNr" placeholder="Kundennummer eingeben" required>
-        </div>
-        <div class="mb-3">
-            <div class="form-label required">API-Key</div>
-            <input type="password" class="form-control" id="dnsApiKey" placeholder="API-Key einfügen" required>
-        </div>
-        <div class="mb-3">
-            <div class="form-label required">API-Passwort</div>
-            <input type="password" class="form-control" id="dnsApiPass" placeholder="API-Passwort einfügen" required>
-        </div>
-        <button class="btn btn-primary mt-3 d-inline" id="nextBtn"><i class="ti ti-square-rounded-arrow-right-filled me-1"></i> Weiter</button>`;
-        document.getElementById('nextBtn')?.addEventListener('click', async () => {
-            const customerNrInput = document.getElementById('dnsCustomerNr') as HTMLInputElement;
-            const apiKeyInput = document.getElementById('dnsApiKey') as HTMLInputElement;
-            const apiPassInput = document.getElementById('dnsApiPass') as HTMLInputElement;
-            customerNrInput.classList.remove('is-invalid');
-            apiKeyInput.classList.remove('is-invalid');
-            apiPassInput.classList.remove('is-invalid');
-            if (!customerNrInput.value.length) {
-                customerNrInput.classList.add('is-invalid');
-                return;
-            }
-            if (!apiKeyInput.value.length) {
-                apiKeyInput.classList.add('is-invalid');
-                return;
-            }
-            if (!apiPassInput.value.length) {
-                apiPassInput.classList.add('is-invalid');
-                return;
-            }
-            container.innerHTML = cardLoading('Erstelle DNS-Provider');
-            socket.emit(
-                'createDNSProvider',
-                {
-                    type: 'netcup',
-                    customerNumber: customerNrInput.value,
-                    apiKey: apiKeyInput.value,
-                    apiPassword: apiPassInput.value,
-                },
-                async (success: boolean, data: string) => {
-                    if (!isPageActive()) return;
-                    if (!success) {
-                        container.innerHTML = errorAlert(`Fehler beim Erstellen des DNS-Providers: ${data}`);
-                        return;
-                    }
-                    dnsProviderID = data;
-                    selectDomain();
-                },
-            );
         });
     }
 
@@ -326,7 +218,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
             const errorContainer = document.getElementById('errorContainer')!;
             domainsInput.classList.remove('is-invalid');
             errorContainer.style.display = 'none';
-            const domains = domainsInput.value.split(/[\s,;]+/);
+            const domains = [...new Set(domainsInput.value.split(/[\s,;]+/))];
             if (domains.length === 0) {
                 domainsInput.classList.add('is-invalid');
                 errorContainer.innerHTML = errorAlert('Bitte geben Sie mindestens eine Domain an.');
@@ -348,17 +240,76 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                     return;
                 }
             }
+            checkDNSConfig(domains);
+        });
+    }
 
-            container.innerHTML = cardLoading('Kontaktiere Server');
-            socket.emit('requestLetsEncryptCert', leAccountID, domains, dnsProviderID, async (success: boolean, errorMsg: string, id: string) => {
-                if (!isPageActive()) return;
-                if (!success) {
-                    container.innerHTML = errorAlert(`Fehler beim Erstellen des Zertifikats: ${errorMsg}`);
-                    return;
+    function checkDNSConfig(domains: string[]) {
+        const container = document.getElementById('container')!;
+
+        container.innerHTML = cardLoading('Überprüfe DNS-Konfiguration');
+
+        socket.emit('checkDNSConfig', domains, async (status: { domain: string; success: boolean }[], destinationHost: string) => {
+            if (!isPageActive()) return;
+            if (!Array.isArray(status) || typeof destinationHost !== 'string') {
+                container.innerHTML = errorAlert('Es ist ein Fehler bei der Überprüfung der DNS-Konfiguration aufgetreten.');
+                return;
+            }
+            const invalidDomains = status.filter((s) => !s.success).map((s) => s.domain);
+            if (!invalidDomains.length) {
+                startCertRequest(domains);
+                return;
+            }
+
+            let correctConfigHtml = '';
+            for (const invalidDomain of invalidDomains) {
+                if (invalidDomain.startsWith('*.') && invalidDomains.includes(invalidDomain.substring(2))) {
+                    continue;
                 }
-                certRequestID = id;
-                certRequestPending();
+
+                let dnsName = `_acme-challenge.${domainToSubdomain(invalidDomain.startsWith('*.') ? invalidDomain.substring(2) : invalidDomain)}`;
+                if (dnsName.endsWith('.')) {
+                    dnsName = dnsName.substring(0, dnsName.length - 1);
+                }
+                correctConfigHtml += `<div class="fw-bold mb-3 h4">${invalidDomain}</div>
+                <div class="mb-3"><pre>${dnsName} NS ${destinationHost}</pre></div>`;
+            }
+
+            container.innerHTML = `<div class="h2">DNS-Konfiguration</div>
+                <hr class="mt-0 mb-3">
+                <div class="mb-3">Für die folgenden Domains muss zunächst die DNS-Konfiguration angepasst werden, bevor ein Zertifikat erstellt werden kann:</div>
+                ${correctConfigHtml}
+                <div class="mb-3"><small>Bitte erstellen Sie die entsprechenden DNS-Einträge und warten Sie, bis die Änderungen übernommen wurden. Dies kann bis zu 24 Stunden dauern.
+                Sie können die DNS-Konfiguration jederzeit erneut überprüfen, indem Sie auf den Button unten klicken. Außerdem können Sie die Zertifikatsanfrage abbrechen und zu einem späteren Zeitpunkt erneut starten.</small></div>
+                <button class="btn btn-danger mt-2 d-inline" id="nextBtn"><i class="ti ti-square-rounded-arrow-right-filled me-1"></i> Weiter</button>`;
+
+            document.getElementById('nextBtn')?.addEventListener('click', async () => {
+                checkDNSConfig(domains);
             });
+        });
+    }
+
+    function domainToSubdomain(domain: string): string {
+        const parts = domain.split('.');
+        return parts.slice(0, parts.length - 2).join('.');
+    }
+
+    function domainToTLD(domain: string): string {
+        const parts = domain.split('.');
+        return parts[parts.length - 2] + '.' + parts[parts.length - 1];
+    }
+
+    function startCertRequest(domains: string[]) {
+        const container = document.getElementById('container')!;
+        container.innerHTML = cardLoading('Kontaktiere Server');
+        socket.emit('requestLetsEncryptCert', leAccountID, domains, async (success: boolean, errorMsg: string, id: string) => {
+            if (!isPageActive()) return;
+            if (!success) {
+                container.innerHTML = errorAlert(`Fehler beim Erstellen des Zertifikats: ${errorMsg}`);
+                return;
+            }
+            certRequestID = id;
+            certRequestPending();
         });
     }
 
