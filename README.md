@@ -1,6 +1,6 @@
 # SSL Cert Updater (next)
 
-A tool to automatically deploy SSL certificates on multiple servers
+A tool to automatically deploy SSL certificates to multiple servers.
 
 The client is available for linux, windows and mac os. The server and client are built into a Docker image using Gitlab CI or GitHub Actions. The client can be downloaded from the server's web UI.
 
