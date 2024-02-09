@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from '@simplewebauthn/server';
 import express from 'express';
-import db from '../core/db';
 import base64url from 'base64url';
-import { getDocuments, getDocument, getUser, saveDocument, deleteDocumentQuery } from '../core/dbHelper';
+import { getDocuments, getDocument, getUser, saveDocument, deleteDocumentQuery, createDocument } from '../core/dbHelper';
 import { checkAuthMiddleware, generateAuthToken } from '../core/auth';
 import { sendResponse, sha512 } from '../utils';
 import { log } from '../core/log';
@@ -77,11 +76,8 @@ export default function (app: express.Application) {
         const { verified, registrationInfo } = verification;
         const { credentialPublicKey, credentialID, counter, credentialDeviceType, credentialBackedUp } = registrationInfo;
 
-        const Authenticator = db.Authenticator();
-
         const credentialIDBase64 = base64url(Buffer.from(credentialID));
-
-        const authenticator = new Authenticator({
+        const success = await createDocument('Authenticator', {
             credentialID: credentialIDBase64,
             userID: user._id,
             name: req.query.deviceName,
@@ -91,7 +87,6 @@ export default function (app: express.Application) {
             counter: counter,
         });
 
-        const success = await saveDocument(authenticator);
         if (!success) {
             return sendResponse(res, 500, 'Internal Server Error');
         }

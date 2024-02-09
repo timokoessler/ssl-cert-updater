@@ -13,7 +13,7 @@
     "dependencies": {
         "@fontsource-variable/nunito": "^5.0.9",
         "@sentry/browser": "^7.66.0",
-        "@simplewebauthn/browser": "^8.0.2",
+        "@simplewebauthn/browser": "^9.0.1",
         "@tabler/core": "^1.0.0-beta19",
         "@tabler/icons-webfont": "^2.30.0",
         "@types/bootstrap": "^5.2.6",
@@ -25,6 +25,8 @@
         "socket.io-client": "^4.7.2"
     },
     "devDependencies": {
+        "@astrojs/check": "^0.5.2",
+        "@simplewebauthn/types": "^9.0.1",
         "@types/autosize": "^4.0.1",
         "@types/canvas-confetti": "^1.6.0"
     }

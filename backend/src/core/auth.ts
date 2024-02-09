@@ -7,7 +7,7 @@ import * as Sentry from '@sentry/node';
 import { sendResponse, sha512 } from '../utils';
 import { log } from './log';
 import * as OTPAuth from 'otpauth';
-import { deleteDocumentQuery, deleteDocumentsQuery } from './dbHelper';
+import { deleteDocumentQuery, deleteDocumentsQuery, getDocument } from './dbHelper';
 
 let privateKey: string;
 
@@ -145,7 +145,7 @@ export async function newFailedLoginAttempt(ip: string) {
 
 export async function hasFailedLoginAttempts(ip: string) {
     try {
-        const failedLoginAttempt = await db.FailedLoginAttempt().findOne({ _id: ip });
+        const failedLoginAttempt = await getDocument<FailedLoginAttempt>('FailedLoginAttempt', { _id: ip });
         if (!failedLoginAttempt) {
             return false;
         }

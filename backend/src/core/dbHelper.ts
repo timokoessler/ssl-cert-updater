@@ -6,13 +6,7 @@ import { getUpdateUIEventTypes, updateUIEvent } from '../sockets/browser-socket'
 import { log } from './log';
 
 export async function getUser(filter: FilterQuery<User>): Promise<Document<string, null, User> & User> {
-    try {
-        return await db.User().findOne(filter);
-    } catch (err) {
-        Sentry.captureException(err);
-        log('error', `Error on getUser: ${err.message}`);
-        return undefined;
-    }
+    return await getDocument<User>('User', filter);
 }
 
 export async function deleteUser(userID: string) {

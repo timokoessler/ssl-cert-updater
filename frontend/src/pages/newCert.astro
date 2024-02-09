@@ -204,11 +204,11 @@ import BaseLayout from '@layouts/BaseLayout.astro';
         const container = document.getElementById('container')!;
         container.innerHTML = `<div class="h2">Domain & Subdomains</div>
     <hr class="mt-0 mb-3">
-    <div class="mb-3">Geben Sie alle Domains und Subdomains an, für die Sie ein Zertifikat erstellen möchten. Sie können auch Wildcard-Domains verwenden, indem Sie ein * verwenden.</div>
+    <div class="mb-3">Geben Sie alle Domains und Subdomains an, für die Sie ein Zertifikat erstellen möchten. Sie können auch Wildcard-Domains eingeben, indem Sie ein * verwenden.</div>
     <div class="mb-3">
         <label class="form-label required">Domains des SSL-Zertifikats</label>
         <textarea class="form-control" placeholder="example.com,*.example.com"></textarea>
-        <div class="mt-1"><small>Trenne die Domains mit Zeilenumbrüchen, Leerzeichen oder Kommas.</small></div>
+        <div class="mt-1"><small>Trenne die Domains mit Zeilenumbrüchen, Leerzeichen oder Kommas. Bitte geben Sie Domains mit Sonderzeichen in IDN-Form an.</small></div>
     </div>
     <div id="errorContainer" style="display:none;"></div>
     <button class="btn btn-danger mt-2 d-inline" id="nextBtn"><i class="ti ti-square-rounded-arrow-right-filled me-1"></i> Weiter</button>`;
@@ -292,11 +292,6 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     function domainToSubdomain(domain: string): string {
         const parts = domain.split('.');
         return parts.slice(0, parts.length - 2).join('.');
-    }
-
-    function domainToTLD(domain: string): string {
-        const parts = domain.split('.');
-        return parts[parts.length - 2] + '.' + parts[parts.length - 1];
     }
 
     function startCertRequest(domains: string[]) {

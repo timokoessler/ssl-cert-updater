@@ -84,7 +84,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                                                 <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
                                                 <path d="M14 4l0 4l-6 0l0 -4"></path>
                                             </svg>
-                                             Speichern
+                                            Speichern
                                         </button>
                                         <div id="notificationAlertContainer"></div>
                                     </form>
@@ -147,7 +147,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                                             <path d="M12 9v6"></path>
                                             <path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9 -9 9s-9 -1.8 -9 -9s1.8 -9 9 -9z"> </path>
                                         </svg>
-                                         Gerät registrieren</button
+                                        Gerät registrieren</button
                                     >
                                     <div class="alert alert-danger mt-3" id="webAuthnErrorAlert" style="display:none;"></div>
                                     <div class="alert alert-success mt-3" id="webAuthnSuccessAlert" style="display:none;"></div>
@@ -230,7 +230,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                                                 <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"> </path>
                                                 <path d="M16 5l3 3"></path>
                                             </svg>
-                                             Passwort ändern
+                                            Passwort ändern
                                         </button>
                                         <div class="alert alert-danger mt-3" id="passErrorAlert" style="display:none;"></div>
                                         <div class="alert alert-success mt-3" id="passSuccessAlert" style="display:none;"></div>
@@ -316,7 +316,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                                                 <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"> </path>
                                                 <path d="M16 5l3 3"></path>
                                             </svg>
-                                             E-Mail Adresse ändern
+                                            E-Mail Adresse ändern
                                         </button>
                                         <div class="alert alert-danger mt-3" id="emailErrorAlert" style="display:none;"></div>
                                         <div class="alert alert-success mt-3" id="emailSuccessAlert" style="display:none;"></div>
@@ -392,7 +392,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                                                 <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path>
                                                 <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path>
                                             </svg>
-                                             Konto löschen
+                                            Konto löschen
                                         </button>
                                         <div class="alert alert-danger mt-3" id="deleteAccountErrorAlert" style="display:none;"></div>
                                     </form>
@@ -484,6 +484,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     import { onPageLoad } from '@scripts/router';
     import { startRegistration as webAuthnStartRegistration } from '@simplewebauthn/browser';
     import { navigate } from 'astro:transitions/client';
+    import type { RegistrationResponseJSON } from '@simplewebauthn/types';
 
     onPageLoad(async () => {
         // @ts-ignore
@@ -552,7 +553,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
             const resp = await fetch('/api/webAuthn/getRegistrationOptions');
 
-            let attResp;
+            let attResp: RegistrationResponseJSON;
             try {
                 attResp = await webAuthnStartRegistration(await resp.json());
             } catch (error) {

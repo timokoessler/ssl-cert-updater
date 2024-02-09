@@ -61,7 +61,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
             leAccounts = leAccounts_;
             leAccountGrid
                 .updateConfig({
-                    data: letsencryptAccountsToGridData(leAccounts),
+                    data: letsencryptAccountsToGridData(),
                 })
                 .forceRender();
         });
@@ -111,7 +111,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
         }).render(document.getElementById('leAccountGridWrapper')!);
     });
 
-    function letsencryptAccountsToGridData(leAccounts_: LetsEncryptAccount[]) {
+    function letsencryptAccountsToGridData() {
         return leAccounts.map((account) => {
             return {
                 id: account._id,
@@ -128,7 +128,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                 if (!isPageActive()) return;
                 if (!Array.isArray(leAccounts_)) reject('Es ist ein Fehler aufgetreten');
                 leAccounts = leAccounts_;
-                resolve(letsencryptAccountsToGridData(leAccounts));
+                resolve(letsencryptAccountsToGridData());
             });
         });
     }

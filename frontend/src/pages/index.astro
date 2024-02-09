@@ -74,7 +74,7 @@ import { navigate } from 'astro:transitions/client';
                             target="_blank"
                             rel="noopener noreferrer">Mehr Informationen</a
                         ><br />
-                         Das Zertifikat wird nicht von den Servern entfernt, auf denen es installiert ist!
+                        Das Zertifikat wird nicht von den Servern entfernt, auf denen es installiert ist!
                     </div>
                     <div class="mb-3"><strong>Ausgewähltes Zertifikat:</strong> <span id="remove-ssl-cert-alt-names"></span></div>
                     <hr class="mt-0 mb-4" />
@@ -232,7 +232,7 @@ import { navigate } from 'astro:transitions/client';
         deleteSSLServerMBtn = document.getElementById('deleteSSLServerMBtn')! as HTMLButtonElement;
         // @ts-expect-error
         const uninstallModal = bootstrap.Modal.getOrCreateInstance('#uninstall-modal');
-        deleteSSLServerMBtn.addEventListener('click', (e) => {
+        deleteSSLServerMBtn.addEventListener('click', () => {
             if (!confirm('Soll der Server wirklich unwiderruflich gelöscht werden?')) return;
             uninstallModal.hide();
             socket.emit('deleteServer', deleteSSLServerMBtn.dataset.id, (error: string) => {

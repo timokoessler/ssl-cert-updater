@@ -114,14 +114,6 @@ if (cluster.isPrimary) {
         res.setHeader('X-XSS-Protection', '1; mode=block');
         res.setHeader('X-Content-Type-Options', 'nosniff');
         res.setHeader('Referrer-Policy', 'no-referrer');
-        if (!isDev()) {
-            /* Todo test and improve
-            res.setHeader(
-                'Content-Security-Policy',
-                // eslint-disable-next-line quotes
-                "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; connect-src 'self'; font-src 'self'; frame-src 'self'; img-src 'self'; manifest-src 'self'; media-src 'self';",
-            );*/
-        }
 
         if (!db.isConnected()) {
             if (req.url.match(/^(\/assets|\/img|\/favicon)/)) {

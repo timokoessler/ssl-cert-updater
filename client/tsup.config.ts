@@ -10,5 +10,5 @@ export default defineConfig({
         '.service': 'text',
         '.ps1': 'text',
     },
-    noExternal: [/.*/]
+    noExternal: [/.*/],
 });

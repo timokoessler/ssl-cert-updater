@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
+import { isDev } from '../constants';
 
 const pages = [
     { name: 'index', path: '', auth: true },
@@ -42,25 +43,33 @@ export async function initPageRoutes(app: express.Application) {
     pageCache = new Map();
 
     for (const page of pages) {
-        app.get(`/${page.path}`, (req, res) => {
-            if (page.auth && (!req.cookies || !req.cookies.auth)) {
-                res.redirect(302, '/login');
-                return;
-            }
-            if (req.path.slice(-1) === '/' && req.path.length > 1) {
-                const query = req.url.slice(req.path.length);
-                const safepath = req.path.slice(0, -1).replace(/\/+/g, '/');
-                return res.redirect(301, safepath + query);
-            }
-            sendPage(res, page.name);
-        });
-        app.get(`/${page.path}.html`, (req, res) => {
-            res.redirect(302, `/${page.path}`);
-        });
-
         // eslint-disable-next-line security/detect-non-literal-fs-filename
         const html = readFileSync(path.resolve(__dirname + `/frontend/${page.name}.html`), 'utf-8');
         pageCache.set(page.name, html);
+    }
+
+    if (!isDev()) {
+        for (const page of pages) {
+            app.get(`/${page.path}`, (req, res) => {
+                if (page.auth && (!req.cookies || !req.cookies.auth)) {
+                    res.redirect(302, '/login');
+                    return;
+                }
+                if (req.path.slice(-1) === '/' && req.path.length > 1) {
+                    const query = req.url.slice(req.path.length);
+                    const safepath = req.path.slice(0, -1).replace(/\/+/g, '/');
+                    return res.redirect(301, safepath + query);
+                }
+                sendPage(res, page.name);
+            });
+            app.get(`/${page.path}.html`, (req, res) => {
+                res.redirect(302, `/${page.path}`);
+            });
+        }
+    } else {
+        app.get('*', (req, res) => {
+            res.redirect(302, 'http://localhost:3001' + req.url);
+        });
     }
 
     app.get('/index.html', (req, res) => {

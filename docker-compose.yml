@@ -1,8 +1,8 @@
 services:
     ssl-cert-updater:
-        image: git.tkoessler.de/timokoessler/ssl-cert-updater-next:latest
+        image: git.tkoessler.de/timokoessler/ssl-cert-updater:latest
         restart: always
-        container_name: ssl-cert-updater-next
+        container_name: ssl-cert-updater
         volumes:
             - ./config:/home/node/config
         ports:
