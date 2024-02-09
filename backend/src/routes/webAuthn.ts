@@ -105,6 +105,10 @@ export default function (app: express.Application) {
 
         const authenticators = await getDocuments<Authenticator>('Authenticator', { userID: user._id });
 
+        if (!Array.isArray(authenticators) || authenticators.length === 0) {
+            return sendResponse(res, 404, 'No authenticators found');
+        }
+
         const options = await generateAuthenticationOptions({
             allowCredentials: authenticators.map((authenticator) => ({
                 id: base64url.toBuffer(authenticator.credentialID),

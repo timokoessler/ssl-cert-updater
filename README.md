@@ -1,6 +1,6 @@
 # SSL Cert Updater
 
-A tool to automatically issue Let’s Encrypt wildcard SSL certificates and deploy them to multiple servers.
+A tool to automatically issue Let's Encrypt wildcard SSL certificates and deploy them to multiple servers.
 
 After the initial setup nearly any action can be done through the web UI.
 

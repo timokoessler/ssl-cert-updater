@@ -18,6 +18,9 @@ let isConnected = false;
 async function init(logConnected = true) {
     mongooseSet('strictQuery', false);
 
+    // Allow empty strings for required fields
+    Schema.Types.String.checkRequired((v) => v != null);
+
     const notificationSettingsSchema = new Schema<NotificationSettings>(
         {
             successfullCertRequest: { type: Boolean, required: true },

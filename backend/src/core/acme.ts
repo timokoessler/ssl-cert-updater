@@ -151,11 +151,18 @@ export async function requestLetsEncryptCert(
         newCertRequestLog('info', 'Zertifikat wurde erfolgreich heruntergeladen', id);
 
         const certParts = acme.crypto.splitPemChain(cert);
-        if (certParts.length !== 3) {
+        if (certParts.length < 2 || certParts.length > 3) {
             return { success: false, errorMsg: 'Zertifikat konnte nicht geparsed werden' };
         }
 
-        return { success: true, cert: certParts[0], key: key.toString(), intermediateCert: certParts[1], rootCA: certParts[2], commonName: commonName };
+        let rootCA = '';
+        if (certParts.length === 3) {
+            rootCA = certParts[2];
+        } else {
+            newCertRequestLog('warn', 'Die Zertifikatskette enthält kein Root-CA-Zertifikat. Verwende leeren String.', id);
+        }
+
+        return { success: true, cert: certParts[0], key: key.toString(), intermediateCert: certParts[1], rootCA: rootCA, commonName: commonName };
     } catch (err) {
         if (!err.message || !err.message.includes('busy')) {
             Sentry.captureException(err);
