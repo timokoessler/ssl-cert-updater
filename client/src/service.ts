@@ -177,7 +177,7 @@ async function updateCertificates(info: ServerUpdateInfo, socket = getSocket()) 
             if (Array.isArray(info.postCommands) && info.postCommands.length > 0) {
                 log('info', 'Running post-commands...');
                 for (const cmd of info.postCommands) {
-                    await runCommand(cmd, info.preCommands.indexOf(cmd));
+                    await runCommand(cmd, info.postCommands.indexOf(cmd));
                 }
             }
 

@@ -148,7 +148,7 @@ export async function requestLetsEncryptCert(
 
         let pemCert = certParts[0];
         // Ensure that last line of cert is a newline
-        if (!cert.endsWith('\n')) {
+        if (!pemCert.endsWith('\n')) {
             pemCert += '\n';
         }
 
