@@ -3,7 +3,7 @@ import { getDocument, createDocument } from './dbHelper';
 import * as Sentry from '@sentry/node';
 import isFQDN from 'validator/lib/isFQDN';
 import { v4 as uuidv4 } from 'uuid';
-import { createDNSChallenge, removeDNSChallenge, verifyDnsChallenge } from './dns';
+import { createDNSChallenge, removeDNSChallenge } from './dns';
 import { DnsChallenge } from 'acme-client/types/rfc8555';
 import { encryptLEAccount } from './aes';
 import { newCertRequestLog } from '../sockets/browser-socket';
@@ -83,17 +83,8 @@ export async function requestLetsEncryptCert(
                         );
                         throw new Error(createDNSChallengeSuccess.errorMsg);
                     }
-                    // Wait for DNS to propagate
+                    // Wait for DNS to propagate (Cache TTL)
                     await setTimeout(10000);
-                    const verifyDNS = await verifyDnsChallenge(id, authz, keyAuthorization, index, authorizations.length);
-                    if (!verifyDNS.success) {
-                        newCertRequestLog(
-                            'error',
-                            `Fehler beim Verifizieren des DNS Records für Challenge ${index + 1}/${authorizations.length}: ${verifyDNS.errorMsg}`,
-                            id,
-                        );
-                        throw new Error(`Verify DNS: ${verifyDNS.errorMsg}`);
-                    }
                     await client.completeChallenge(challenge);
                     challengeCompleted = true;
                     newCertRequestLog(

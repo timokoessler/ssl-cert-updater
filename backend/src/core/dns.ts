@@ -125,32 +125,6 @@ export async function removeDNSChallenge(
     return { success: true };
 }
 
-export async function verifyDnsChallenge(
-    id: string,
-    authz: acme.Authorization,
-    keyAuthorization: string,
-    index: number,
-    total: number,
-): Promise<{ success: boolean; errorMsg?: string }> {
-    const name = getAcmeHost(authz.identifier.value);
-    log('debug', `Verifying DNS record ${name} with value ${keyAuthorization}`);
-
-    const resolve = UDPClient();
-    const txtRecords = await resolve(name, 'TXT');
-    if (txtRecords.answers.length === 0) {
-        return { success: false, errorMsg: `TXT Record für ${name} nicht gefunden` };
-    }
-
-    for (const txtRecord of txtRecords.answers) {
-        if (txtRecord.data === keyAuthorization) {
-            newCertRequestLog('info', `DNS-Eintrag ${name} erfolgreich überprüft (Challenge ${index + 1}/${total})`, id);
-            return { success: true };
-        }
-    }
-
-    return { success: false, errorMsg: `TXT Record mit dem Wert ${keyAuthorization} für ${name} konnte nicht gefunden werden.` };
-}
-
 export async function checkDNSConfiguration(domain: string): Promise<{ success: boolean; errorMsg?: string }> {
     const resolve = UDPClient();
 
