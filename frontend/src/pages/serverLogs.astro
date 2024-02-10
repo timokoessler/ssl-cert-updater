@@ -27,7 +27,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 <style></style>
 <script>
     import { errorAlert } from '@scripts/components';
-    import { onPageLeave, onPageLoad } from '@scripts/router';
+    import { onPageLeave, onAnyPageLoad } from '@scripts/router';
     import { getWS } from '@scripts/socket';
 
     const urlRegex = /^\/server\/[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}\/logs$/i;
@@ -36,7 +36,8 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
     let server: SSLServer;
 
-    onPageLoad(() => {
+    onAnyPageLoad(() => {
+        if (!isPageActive) return;
         const container = document.getElementById('container')!;
         const path = window.location.pathname;
         if (!urlRegex.test(path)) {

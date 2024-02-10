@@ -30,6 +30,16 @@ export function onPageLoad(callback: () => void, once = false) {
     );
 }
 
+export function onAnyPageLoad(callback: () => void, once = false) {
+    document.addEventListener(
+        'astro:page-load',
+        () => {
+            callback();
+        },
+        { once },
+    );
+}
+
 export function onFirstPageLoad(callback: () => void) {
     onPageLoad(callback, true);
 }

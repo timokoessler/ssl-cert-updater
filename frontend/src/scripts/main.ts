@@ -65,23 +65,22 @@ function loginRequired() {
 }
 
 async function checkLoggedIn() {
+    if (!loginRequired()) {
+        return;
+    }
     try {
         const response = await fetch('/api/loggedIn');
         if (response.status !== 200) {
             if (response.status === 404 || (response.status >= 500 && response.status < 600)) {
-                return false;
-            }
-            if (!loginRequired()) {
-                return false;
+                return;
             }
             navigate('/login');
             bc.postMessage('logout');
-            return false;
+            return;
         }
     } catch (e) {
         console.error(e);
     }
-    return true;
 }
 
 async function initSentry() {

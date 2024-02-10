@@ -57,7 +57,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     // @ts-ignore
     import { deDE } from 'gridjs/l10n';
     import { capitalizeFirstLetter } from '@scripts/utils';
-    import { onPageLeave, onPageLoad, registerLocalDocumentEvent } from '@scripts/router';
+    import { onAnyPageLoad, onPageLeave, registerLocalDocumentEvent } from '@scripts/router';
 
     const urlRegex = /^\/server\/[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i;
     const socket = getWS();
@@ -65,7 +65,8 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
     let server: SSLServer;
 
-    onPageLoad(() => {
+    onAnyPageLoad(() => {
+        if (!isPageActive) return;
         const container = document.getElementById('container')!;
         const path = window.location.pathname;
         if (!urlRegex.test(path)) {
