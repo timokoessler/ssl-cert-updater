@@ -6,8 +6,8 @@ import acme from 'acme-client';
 export function splitFullchainCert(fullchain: string) {
     try {
         const certParts = acme.crypto.splitPemChain(fullchain);
-        if (certParts.length !== 3) {
-            throw new Error('Parts length is not 3');
+        if (certParts.length < 2 || certParts.length > 3) {
+            throw new Error('Invalid certificate chain');
         }
         return certParts;
     } catch (e) {
@@ -37,7 +37,7 @@ export async function readCertificate(fullchainPath: string) {
             return null;
         }
         const certParts = splitFullchainCert(certData);
-        if (!certParts || certParts.length !== 3) {
+        if (!certParts || !Array.isArray(certParts)) {
             return null;
         }
         return getCertificateInfo(certParts[0]);

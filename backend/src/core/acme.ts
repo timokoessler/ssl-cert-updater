@@ -146,6 +146,18 @@ export async function requestLetsEncryptCert(
             return { success: false, errorMsg: 'Zertifikat konnte nicht geparsed werden' };
         }
 
+        let pemCert = certParts[0];
+        // Ensure that last line of cert is a newline
+        if (!cert.endsWith('\n')) {
+            pemCert += '\n';
+        }
+
+        let intermediateCert = certParts[1];
+        // Ensure that last line of intermediate cert is a newline
+        if (!intermediateCert.endsWith('\n')) {
+            intermediateCert += '\n';
+        }
+
         let rootCA = '';
         if (certParts.length === 3) {
             rootCA = certParts[2];
@@ -153,7 +165,7 @@ export async function requestLetsEncryptCert(
             newCertRequestLog('warn', 'Die Zertifikatskette enthält kein Root-CA-Zertifikat. Verwende leeren String.', id);
         }
 
-        return { success: true, cert: certParts[0], key: key.toString(), intermediateCert: certParts[1], rootCA: rootCA, commonName: commonName };
+        return { success: true, cert: pemCert, key: key.toString(), intermediateCert: intermediateCert, rootCA: rootCA, commonName: commonName };
     } catch (err) {
         if (!err.message || !err.message.includes('busy')) {
             Sentry.captureException(err);

@@ -106,12 +106,14 @@ async function updateCertificates(info: ServerUpdateInfo, socket = getSocket()) 
                 return;
             }
 
-            log('info', 'Running pre-commands...');
-            for (const cmd of info.preCommands) {
-                if (!(await runCommand(cmd, info.preCommands.indexOf(cmd)))) {
-                    resumeWatcher();
-                    log('error', 'Stopping update process due to error in pre-command');
-                    return;
+            if (Array.isArray(info.preCommands) && info.preCommands.length > 0) {
+                log('info', 'Running pre-commands...');
+                for (const cmd of info.preCommands) {
+                    if (!(await runCommand(cmd, info.preCommands.indexOf(cmd)))) {
+                        resumeWatcher();
+                        log('error', 'Stopping update process due to error in pre-command');
+                        return;
+                    }
                 }
             }
 
@@ -172,9 +174,11 @@ async function updateCertificates(info: ServerUpdateInfo, socket = getSocket()) 
                 log('info', `Successfully updated certificate for ${cert.altNames.join(',')}`);
             }
 
-            log('info', 'Running post-commands...');
-            for (const cmd of info.postCommands) {
-                await runCommand(cmd, info.preCommands.indexOf(cmd));
+            if (Array.isArray(info.postCommands) && info.postCommands.length > 0) {
+                log('info', 'Running post-commands...');
+                for (const cmd of info.postCommands) {
+                    await runCommand(cmd, info.preCommands.indexOf(cmd));
+                }
             }
 
             log('info', 'Finished updating certificates');
