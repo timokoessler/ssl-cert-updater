@@ -1,14 +1,12 @@
 import acme from 'acme-client';
 import { DnsChallenge } from 'acme-client/types/rfc8555';
-// Type definitions for dns2 are incorrect, so they are not installed
-// @ts-expect-error Wrong type definitions
-import { UDPClient } from 'dns2';
 import { newCertRequestLog } from '../sockets/browser-socket';
 import { log } from './log';
 import dns2 from 'dns2';
 import isFQDN from 'validator/lib/isFQDN';
 import { createDocument, deleteDocumentsQuery, getDocuments } from './dbHelper';
 import { v4 as uuidv4 } from 'uuid';
+import { resolveTxt } from 'node:dns/promises';
 
 const dnsServerPort = 5333;
 
@@ -126,21 +124,24 @@ export async function removeDNSChallenge(
 }
 
 export async function checkDNSConfiguration(domain: string): Promise<{ success: boolean; errorMsg?: string }> {
-    const resolve = UDPClient();
-
-    const name = getAcmeHost(domain);
-    const txtRecords = await resolve(name, 'TXT');
-    if (txtRecords.answers.length === 0) {
-        return { success: false };
-    }
-
-    for (const txtRecord of txtRecords.answers) {
-        if (txtRecord.data === 'sslup') {
-            return { success: true };
+    try {
+        const name = getAcmeHost(domain);
+        const txtRecords = await resolveTxt(name);
+        if (!Array.isArray(txtRecords) || txtRecords.length === 0) {
+            return { success: false };
         }
-    }
 
-    return { success: false };
+        for (const txtRecordChunks of txtRecords) {
+            const txtRecord = txtRecordChunks.join('');
+            if (txtRecord === 'sslup') {
+                return { success: true };
+            }
+        }
+
+        return { success: false };
+    } catch (e) {
+        return { success: false, errorMsg: e.message };
+    }
 }
 
 export function domainToTLD(domain: string): string {
