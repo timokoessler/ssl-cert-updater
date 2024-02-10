@@ -27,5 +27,6 @@ dist
 *.sw?
 
 .env
+!frontend/.env
 *.bat
 .turbo
