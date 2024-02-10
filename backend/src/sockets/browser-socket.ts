@@ -77,7 +77,8 @@ async function checkAuth(socket: Socket<ClientToServerEvents, ServerToClientEven
             if (!socket.data.sessionInfo) {
                 socket.data.sessionInfo = sessionInfo;
                 return true;
-            } else if (socket.data.sessionInfo.uid === sessionInfo.uid) {
+            }
+            if (socket.data.sessionInfo.uid === sessionInfo.uid) {
                 return true;
             }
         }

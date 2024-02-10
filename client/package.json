@@ -1,6 +1,6 @@
 {
     "name": "client",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "",
     "main": "dist/client.js",
     "bin": "dist/client.js",
@@ -11,10 +11,10 @@
     },
     "pkg": {
         "targets": [
-            "node18-linux-x64",
-            "node18-linux-arm64",
-            "node18-win-x64",
-            "node18-macos-x64"
+            "node20-linux-x64",
+            "node20-linux-arm64",
+            "node20-win-x64",
+            "node20-macos-x64"
         ],
         "outputPath": "../backend/dist/client"
     },

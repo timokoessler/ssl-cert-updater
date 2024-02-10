@@ -24,7 +24,6 @@ bc.addEventListener('message', (event) => {
     }
 });
 
-checkLoggedIn();
 initRouter();
 
 document.addEventListener('astro:page-load', () => {
@@ -53,35 +52,6 @@ document.addEventListener('astro:page-load', () => {
         });
     }
 });
-
-function loginRequired() {
-    const cancelIDs = ['loginForm', 'registerForm', 'errorPage', 'registerConfirmPage', 'forgotPasswordForm'];
-    for (const id of cancelIDs) {
-        if (document.getElementById(id)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-async function checkLoggedIn() {
-    if (!loginRequired()) {
-        return;
-    }
-    try {
-        const response = await fetch('/api/loggedIn');
-        if (response.status !== 200) {
-            if (response.status === 404 || (response.status >= 500 && response.status < 600)) {
-                return;
-            }
-            navigate('/login');
-            bc.postMessage('logout');
-            return;
-        }
-    } catch (e) {
-        console.error(e);
-    }
-}
 
 async function initSentry() {
     const dnsResponse = await fetch('/api/sentry/frontend/dsn');
