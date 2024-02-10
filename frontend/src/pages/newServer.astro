@@ -184,6 +184,10 @@ import BaseLayout from '@layouts/BaseLayout.astro';
             <a href="/server/${serverID}" class="btn btn-primary d-inline"><i class="ti ti-server me-1"></i> Server verwalten</a>
             <a href="/" class="btn btn-secondary d-inline"><i class="ti ti-home me-1"></i> Zur Übersicht</a>
         </div>`;
-        confetti();
+        try {
+            confetti();
+        } catch {
+            // Catch error if navigating away from page before confetti is finished completely
+        }
     });
 </script>

@@ -330,7 +330,11 @@ import BaseLayout from '@layouts/BaseLayout.astro';
             document.getElementById('nextBtn')?.addEventListener('click', async () => {
                 navigate('/');
             });
-            confetti();
+            try {
+                confetti();
+            } catch {
+                // Catch error if navigating away from page before confetti is finished completely
+            }
         });
         if (loadOldLogs) {
             socket.emit('getCertRequestLogs', certRequestID, (logs: CertRequestLog[]) => {
