@@ -105,11 +105,11 @@ async function menu() {
         } catch (err) {
             spinner.fail('Renewal request failed');
             log('error', err.message);
-            log('info', 'Make sure the sslup server is running and reachable (you need to run the cli in the same container)');
+            log('info', 'Make sure the sslup server is running and reachable (you need to run the cli in the same container using docker compose exec)');
             process.exit(1);
         }
         spinner.fail('Renewal request failed');
-        log('info', 'Make sure the sslup server is running and reachable (you need to run the cli in the same container)');
+        log('info', 'Make sure the sslup server is running and reachable (you need to run the cli in the same container using docker compose exec)');
         process.exit(1);
     }
     ora('Invalid action').fail();
