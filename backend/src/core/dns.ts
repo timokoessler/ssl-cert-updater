@@ -7,6 +7,7 @@ import isFQDN from 'validator/lib/isFQDN';
 import { createDocument, deleteDocumentsQuery, getDocuments } from './dbHelper';
 import { v4 as uuidv4 } from 'uuid';
 import { resolveTxt } from 'node:dns/promises';
+import { sha128 } from '../utils';
 
 const dnsServerPort = 5333;
 
@@ -41,7 +42,7 @@ export async function initDNSServer() {
                     type: dns2.Packet.TYPE.TXT,
                     class: dns2.Packet.CLASS.IN,
                     ttl: 300,
-                    data: 'sslup',
+                    data: `sslup-${sha128(process.env.URL)}`,
                 });
                 const dnsRecords = await getDocuments<DNSRecord>('DNSRecord', { name: lookupName, type });
                 if (Array.isArray(dnsRecords)) {
@@ -133,7 +134,7 @@ export async function checkDNSConfiguration(domain: string): Promise<{ success: 
 
         for (const txtRecordChunks of txtRecords) {
             const txtRecord = txtRecordChunks.join('');
-            if (txtRecord === 'sslup') {
+            if (txtRecord === `sslup-${sha128(process.env.URL)}`) {
                 return { success: true };
             }
         }

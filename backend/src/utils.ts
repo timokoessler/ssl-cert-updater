@@ -6,6 +6,10 @@ export function sha512(txt: string) {
     return crypto.createHash('sha512').update(txt).digest('hex');
 }
 
+export function sha128(txt: string) {
+    return crypto.createHash('sha128').update(txt).digest('hex');
+}
+
 export function sendResponse(res: express.Response, statusCode: number, response: object | string | number) {
     if (!res.headersSent) {
         if (typeof response !== 'object') {
