@@ -2,7 +2,7 @@
 import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from '@simplewebauthn/server';
 import express from 'express';
 import base64url from 'base64url';
-import { getDocuments, getDocument, getUser, saveDocument, deleteDocumentQuery, createDocument } from '../core/dbHelper';
+import { getDocuments, getDocument, getUser, saveDocument, createDocument, deleteDocument } from '../core/dbHelper';
 import { checkAuthMiddleware, generateAuthToken } from '../core/auth';
 import { sendResponse, sha512 } from '../utils';
 import { log } from '../core/log';
@@ -235,13 +235,10 @@ export default function (app: express.Application) {
         if (!authenticator) {
             return sendResponse(res, 404, 'Can not find Authenticator');
         }
-        try {
-            await deleteDocumentQuery('Authenticator', { _id: id, userID: req.sessionInfo.uid });
-        } catch (error) {
-            log('error', `Error on webAuthn removeDevice: ${error.message}`);
+
+        if (!(await deleteDocument<Authenticator>(authenticator))) {
             return sendResponse(res, 500, 'Internal Server Error');
         }
-
         return sendResponse(res, 200, 'OK');
     });
 }

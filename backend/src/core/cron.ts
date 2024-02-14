@@ -18,9 +18,9 @@ export async function initCron(firstStart: boolean) {
     }
     initialized = true;
     if (firstStart) {
-        log('info', `Worker ${process.pid} is setting up cronjobs (initial application start)`);
+        log('info', 'Setting up cronjobs (initial application start)');
     } else {
-        log('info', `Worker ${process.pid} is setting up cronjobs (worker restart)`);
+        log('info', 'Setting up cronjobs (worker restart)');
     }
 
     CronJob.from({

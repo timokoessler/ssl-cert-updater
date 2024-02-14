@@ -19,12 +19,12 @@ export function log(level: LogLevel, content: string | object) {
     const dateStr = new Date().toISOString();
 
     if (level === 'error') {
-        console.error(`${dateStr} - ${chalk.bgRed('ERROR')}: ${txt}`);
+        console.error(`${dateStr} - ${chalk.bgRed('ERROR')}: ${txt} - ${chalk.gray(`(#${process.pid})`)}`);
     } else if (level === 'warn') {
-        console.warn(`${dateStr} - ${chalk.yellow('WARN')}: ${txt}`);
+        console.warn(`${dateStr} - ${chalk.yellow('WARN')}: ${txt} - ${chalk.gray(`(#${process.pid})`)}`);
     } else if (level === 'info') {
-        console.info(`${dateStr} - ${chalk.blue('INFO')}: ${txt}`);
+        console.info(`${dateStr} - ${chalk.blue('INFO')}: ${txt} - ${chalk.gray(`(#${process.pid})`)}`);
     } else if (isDev()) {
-        console.log(`${dateStr} - DEBUG: ${txt}`);
+        console.log(`${dateStr} - ${chalk.gray(`DEBUG: ${txt}`)} - ${chalk.gray(`(#${process.pid})`)}`);
     }
 }

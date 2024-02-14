@@ -152,7 +152,7 @@ if (cluster.isPrimary) {
     });
 
     httpServer.listen(Number(process.env.PORT), process.env.IP, () => {
-        log('info', `Worker ${process.pid} listening on ${process.env.IP}:${process.env.PORT}`);
+        log('info', `Listening on ${process.env.IP}:${process.env.PORT}`);
     });
 
     const gracefulShutdown = async (force = false) => {

@@ -160,17 +160,17 @@ async function init(logConnected = true) {
 
     connection.on('connected', () => {
         isConnected = true;
-        if (logConnected) log('info', `Worker ${process.pid} connected to MongoDB`);
+        if (logConnected) log('info', 'Connected to MongoDB');
     });
 
     connection.on('disconnected', () => {
         isConnected = false;
-        log('error', `Worker ${process.pid} disconnected from MongoDB`);
+        log('error', 'Disconnected from MongoDB');
     });
 
     connection.on('reconnected', () => {
         isConnected = true;
-        log('info', `Worker ${process.pid} reconnected to MongoDB`);
+        log('info', 'Reconnected to MongoDB');
     });
 
     connection.on('error', (err) => {
