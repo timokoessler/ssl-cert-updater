@@ -5,9 +5,7 @@ A tool to automatically issue Let's Encrypt wildcard SSL certificates and deploy
 After the initial setup nearly any action can be done through the web UI.
 
 > [!WARNING]  
-> This software is still a work in progress and there is no stable release yet.
-
-This software was previously a internal tool of a company and is now open source and may not be self-explanatory yet.
+> This software was previously a internal tool of a company and is now open source and may not be self-explanatory yet. The ui is currently only available in German.
 
 ## Getting started
 
