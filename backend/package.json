@@ -20,7 +20,7 @@
         "@types/ua-parser-js": "^0.7.37"
     },
     "dependencies": {
-        "@sentry/node": "^7.57.0",
+        "@sentry/node": "^8.11.0",
         "@simplewebauthn/server": "^9.0.2",
         "@socket.io/cluster-adapter": "^0.2.1",
         "acme-client": "^5.0.0",
