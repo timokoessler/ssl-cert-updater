@@ -35,11 +35,12 @@
         "prettier": "^3.0.3",
         "prettier-plugin-astro": "^0.14.0",
         "tsup": "^8.0.1",
-        "turbo": "^1.10.13",
+        "turbo": "^2.0.4",
         "typescript": "5.5"
     },
     "dependencies": {
         "uuid": "^10.0.0",
         "validator": "^13.11.0"
-    }
+    },
+    "packageManager": "npm@10.8.1"
 }
