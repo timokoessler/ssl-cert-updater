@@ -1,5 +1,13 @@
 import * as dotenv from 'dotenv';
 dotenv.config({ path: __dirname + '/config/.env' });
+import * as Sentry from '@sentry/node';
+
+if (process.env.SENTRY_DSN) {
+    Sentry.init({
+        dsn: process.env.SENTRY_DSN,
+        tracesSampleRate: 0,
+    });
+}
 
 import express from 'express';
 import cookieParser from 'cookie-parser';
@@ -11,7 +19,6 @@ import { initAuth } from './core/auth';
 import { init as initNotifications } from './notifications';
 import cluster from 'node:cluster';
 import { setupPrimary } from '@socket.io/cluster-adapter';
-import * as Sentry from '@sentry/node';
 import sirv from 'sirv';
 import { log } from './core/log';
 import { isDev } from './constants';
@@ -86,21 +93,6 @@ if (cluster.isPrimary) {
         app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
     }
 
-    if (process.env.SENTRY_DSN) {
-        Sentry.init({
-            dsn: process.env.SENTRY_DSN,
-            tracesSampleRate: 0,
-            integrations: [
-                new Sentry.Integrations.Http(),
-                new Sentry.Integrations.Express({ app }),
-                // Automatically instrument Node.js libraries and frameworks
-                ...Sentry.autoDiscoverNodePerformanceMonitoringIntegrations(),
-            ],
-        });
-        app.use(Sentry.Handlers.requestHandler());
-        app.use(Sentry.Handlers.tracingHandler());
-    }
-
     process.on('message', (message) => {
         if (message === 'initialStartCron') {
             initCron(true);
@@ -135,10 +127,6 @@ if (cluster.isPrimary) {
 
     if (!isDev()) {
         app.use('/', sirv(__dirname + '/frontend'));
-    }
-
-    if (process.env.SENTRY_DSN) {
-        app.use(Sentry.Handlers.errorHandler());
     }
 
     app.use((req, res) => {
