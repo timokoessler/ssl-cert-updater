@@ -41,7 +41,7 @@ export async function readCertificate(fullchainPath: string) {
             return null;
         }
         return getCertificateInfo(certParts[0]);
-    } catch (err) {
+    } catch {
         return null;
     }
 }

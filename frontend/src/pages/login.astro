@@ -186,7 +186,9 @@ import BaseLayout from '@layouts/BaseLayout.astro';
             ) {
                 loginSuccessUrl = document.referrer;
             }
-        } catch (err) {}
+        } catch {
+            //
+        }
 
         checkLoggedIn(loginSuccessUrl);
 
@@ -234,13 +236,12 @@ import BaseLayout from '@layouts/BaseLayout.astro';
             try {
                 asseResp = await webAuthnStartAuthentication(await resp.json());
             } catch (error) {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
-                const errorMsg = error.message as string;
-                errorAlertWebAuthn.innerText = errorMsg;
+                errorAlertWebAuthn.innerText = error.message;
                 errorAlertWebAuthn.style.display = 'block';
                 localStorage.removeItem('webAuthnUsed');
                 console.error(error);
+                return;
             }
 
             const verificationResp = await fetch('/api/webAuthn/verifyAuthentication?email=' + emailInput.value, {
@@ -332,6 +333,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
         const codeInputs = document.querySelectorAll('[data-code-input]') as NodeListOf<HTMLInputElement>;
         for (let i = 0; i < codeInputs.length; i++) {
+            // eslint-disable-next-line security/detect-object-injection
             codeInputs[i].addEventListener('input', function (e) {
                 if (!e.target) {
                     return;
@@ -346,6 +348,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                 }
             });
 
+            // eslint-disable-next-line security/detect-object-injection
             codeInputs[i].addEventListener('keydown', function (e) {
                 if (!e.target) {
                     return;
@@ -356,6 +359,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                 }
             });
 
+            // eslint-disable-next-line security/detect-object-injection
             codeInputs[i].addEventListener('paste', function (e) {
                 if (!e.target) {
                     return;
@@ -367,6 +371,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                 const pastedText = clipboardData.getData('text');
                 if (pastedText.length === codeInputs.length && /^[0-9]+$/.test(pastedText)) {
                     for (let j = 0; j < codeInputs.length; j++) {
+                        // eslint-disable-next-line security/detect-object-injection
                         codeInputs[j].value = pastedText[j];
                     }
                     document.getElementById('loginBtn')!.focus();
@@ -382,7 +387,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
         verificationForm.addEventListener('submit', (e) => {
             e.preventDefault();
             errorAlert.classList.add('d-none');
-
+            // eslint-disable-next-line security/detect-object-injection
             const token = [...Array(6).keys()].map((i) => codeInputs[i].value).join('');
             if (!token.length) {
                 codeInputs[0].focus();

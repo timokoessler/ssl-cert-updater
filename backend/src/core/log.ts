@@ -8,7 +8,7 @@ export function log(level: LogLevel, content: string | object) {
     } else {
         try {
             txt = JSON.stringify(content);
-        } catch (error) {
+        } catch {
             txt = content.toString();
         }
     }

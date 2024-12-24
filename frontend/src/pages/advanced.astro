@@ -26,9 +26,6 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
 <style></style>
 <script>
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    /* eslint-disable @typescript-eslint/ban-ts-comment */
-    // @ts-ignore Package is wrong configured
     import { Grid } from 'gridjs';
     import 'gridjs/dist/theme/mermaid.min.css';
     // @ts-ignore
@@ -122,8 +119,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
     }
 
     function loadLetsEncryptAccounts() {
-        // eslint-disable-next-line @typescript-eslint/ban-types
-        return new Promise((resolve: (data: {}[]) => void, reject: (error: string) => void) => {
+        return new Promise((resolve: (data: ReturnType<typeof letsencryptAccountsToGridData>) => void, reject: (error: string) => void) => {
             socket.emit('getLetsEncryptAccounts', (leAccounts_: LetsEncryptAccount[]) => {
                 if (!isPageActive()) return;
                 if (!Array.isArray(leAccounts_)) reject('Es ist ein Fehler aufgetreten');

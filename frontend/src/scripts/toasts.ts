@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 function prepareToastContainer() {
     if (document.getElementById('toast-container')) return document.getElementById('toast-container')!;
     const toastContainer = document.createElement('div');

@@ -60,7 +60,7 @@ export default function (app: express.Application) {
         let passwordHash: string;
         try {
             passwordHash = await generatePasswordHash(password, user.salt);
-        } catch (error) {
+        } catch {
             return sendResponse(res, 500, 'Internal Server Error');
         }
 
@@ -116,7 +116,6 @@ export default function (app: express.Application) {
             const knownDevice = req.cookies.knownDevice;
             if (typeof knownDevice !== 'string') {
                 sendNewDeviceToken(user, ua, req.ip);
-                // eslint-disable-next-line quotes
                 return sendResponse(res, 418, "I'm a teapot");
             }
 
@@ -128,7 +127,6 @@ export default function (app: express.Application) {
                     secure: !isDev() ? true : false,
                 });
                 sendNewDeviceToken(user, ua, req.ip);
-                // eslint-disable-next-line quotes
                 return sendResponse(res, 418, "I'm a teapot");
             }
         }
@@ -154,7 +152,7 @@ export default function (app: express.Application) {
                 secure: !isDev() ? true : false,
             });
             sendResponse(res, 200, 'Logged in.');
-        } catch (error) {
+        } catch {
             return sendResponse(res, 500, 'Internal Server Error');
         }
     });
@@ -183,7 +181,7 @@ export default function (app: express.Application) {
             if (!email) {
                 return sendResponse(res, 400, 'Der verwendete Link ist ungültig.');
             }
-        } catch (error) {
+        } catch {
             return sendResponse(res, 400, 'Der verwendete Link ist ungültig.');
         }
 
@@ -289,7 +287,7 @@ export default function (app: express.Application) {
         let email: string;
         try {
             email = Buffer.from(emailBase64, 'base64url').toString('utf-8');
-        } catch (e) {
+        } catch {
             return sendResponse(res, 400, 'Der verwendete Link ist ungültig. (0x2)');
         }
         if (!isEmail(email)) {
@@ -326,7 +324,7 @@ export default function (app: express.Application) {
         let passwordHash: string;
         try {
             passwordHash = await generatePasswordHash(pass, salt);
-        } catch (error) {
+        } catch {
             return sendResponse(res, 500, 'Internal Server Error');
         }
 
@@ -351,7 +349,7 @@ export default function (app: express.Application) {
                 return sendResponse(res, 400, 'Der verwendete Link ist ungültig.');
             }
             return sendResponse(res, 200, 'Der Link ist gültig.');
-        } catch (error) {
+        } catch {
             return sendResponse(res, 400, 'Der verwendete Link ist ungültig.');
         }
     });

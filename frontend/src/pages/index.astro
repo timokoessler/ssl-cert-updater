@@ -1,7 +1,6 @@
 ---
 import PageHeader from '@components/PageHeader.astro';
 import BaseLayout from '@layouts/BaseLayout.astro';
-import { navigate } from 'astro:transitions/client';
 ---
 
 <BaseLayout>
@@ -332,8 +331,7 @@ import { navigate } from 'astro:transitions/client';
     }
 
     function loadSSLCertList() {
-        // eslint-disable-next-line @typescript-eslint/ban-types
-        return new Promise((resolve: (data: {}[]) => void, reject: (error: string) => void) => {
+        return new Promise((resolve: (data: ReturnType<typeof sslCertsToGridData>) => void, reject: (error: string) => void) => {
             socket.emit('getSSLCertList', (certs: SSLCert[]) => {
                 if (!Array.isArray(certs)) reject('Es ist ein Fehler aufgetreten');
                 sslCerts = certs;
@@ -360,8 +358,7 @@ import { navigate } from 'astro:transitions/client';
     }
 
     function loadServerList() {
-        // eslint-disable-next-line @typescript-eslint/ban-types
-        return new Promise((resolve: (data: {}[]) => void, reject: (error: string) => void) => {
+        return new Promise((resolve: (data: ReturnType<typeof serversToGridData>) => void, reject: (error: string) => void) => {
             socket.emit('getServerList', (servers: SSLServer[], latestClientVersion_: string) => {
                 if (!isPageActive()) return;
                 if (!Array.isArray(servers)) reject('Es ist ein Fehler aufgetreten');
@@ -410,7 +407,7 @@ import { navigate } from 'astro:transitions/client';
                 {
                     id: 'expiresAt',
                     name: 'Gültig bis',
-                    formatter: (cell: any) => {
+                    formatter: (cell) => {
                         if (typeof cell != 'number') return 'Error';
                         const date = new Date(cell);
                         const days = Math.floor((date.getTime() - Date.now()) / 1000 / 60 / 60 / 24);
@@ -425,7 +422,7 @@ import { navigate } from 'astro:transitions/client';
                 {
                     id: 'autoRenew',
                     name: 'Erneuerung',
-                    formatter: (cell: any) => {
+                    formatter: (cell) => {
                         if (typeof cell != 'boolean') return 'Error';
                         if (cell) {
                             return gridHtml('<span class="text-success">Aktiviert</span>');
@@ -439,7 +436,7 @@ import { navigate } from 'astro:transitions/client';
                 },
                 {
                     name: 'Aktionen',
-                    formatter: (_cell: any, row: any) => {
+                    formatter: (_cell, row) => {
                         return gridHtml(`<div>
                     <button type="button" class="btn btn-danger grid-btn" data-action="deleteSSLCert" data-id="${row.cells[0].data}"><i class="ti ti-trash"></i></button>
                 </div>`);
@@ -472,7 +469,7 @@ import { navigate } from 'astro:transitions/client';
                 {
                     id: 'status',
                     name: 'Status',
-                    formatter: (cell: any, row: any) => {
+                    formatter: (cell, row) => {
                         if (typeof cell != 'boolean') return 'Error';
                         if (cell) {
                             return gridHtml('<span class="text-success">Online</span>');
@@ -484,7 +481,7 @@ import { navigate } from 'astro:transitions/client';
                 {
                     id: 'version',
                     name: 'Version',
-                    formatter: (cell: any) => {
+                    formatter: (cell) => {
                         if (typeof cell != 'string') return 'Error';
                         if (compareVersions(cell, latestClientVersion) === 2) {
                             return gridHtml(
@@ -497,7 +494,7 @@ import { navigate } from 'astro:transitions/client';
                 {
                     id: 'os',
                     name: 'Betriebssystem',
-                    formatter: (cell: any, row: any) => {
+                    formatter: (cell, row) => {
                         if (typeof cell != 'string') return 'Error';
                         let os;
                         if (cell === 'win32') {
@@ -518,7 +515,7 @@ import { navigate } from 'astro:transitions/client';
                 {
                     id: 'ip',
                     name: 'IP-Adresse',
-                    formatter: (cell: any) => {
+                    formatter: (cell) => {
                         if (typeof cell != 'string') return '???';
                         return gridHtml(`<a href="https://ipinfo.io/${cell}" target="_blank" rel="noopener noreferrer">${cell}</a>`);
                     },
@@ -529,7 +526,7 @@ import { navigate } from 'astro:transitions/client';
                 },
                 {
                     name: 'Aktionen',
-                    formatter: (_cell: any, row: any) => {
+                    formatter: (_cell, row) => {
                         return gridHtml(`<div class="btn-list">
                     <button type="button" class="btn btn-primary grid-btn" data-action="editServer" data-id="${row.cells[0].data}"><i class="ti ti-edit"></i></button>
                     <button type="button" class="btn btn-secondary grid-btn" data-action="serverLogs" data-id="${row.cells[0].data}"><i class="ti ti-article"></i></button>

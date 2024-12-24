@@ -108,7 +108,7 @@ export async function checkAuthMiddleware(req: RequestWithSessionInfo, res: expr
 
         req.sessionInfo = valid;
         return next();
-    } catch (err) {
+    } catch {
         return sendResponse(res, 403, 'Forbidden');
     }
 }

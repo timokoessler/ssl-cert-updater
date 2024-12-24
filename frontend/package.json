@@ -14,20 +14,20 @@
         "@fontsource-variable/nunito": "^5.0.9",
         "@sentry/browser": "^8.11.0",
         "@simplewebauthn/browser": "^9.0.1",
-        "@tabler/core": "^1.0.0-beta19",
+        "@tabler/core": "^1.0.0-beta20",
         "@tabler/icons-webfont": "^2.30.0",
         "@types/bootstrap": "^5.2.6",
-        "astro": "^4.0.3",
+        "astro": "^5.0.3",
         "autosize": "^6.0.1",
         "canvas-confetti": "^1.6.0",
         "gridjs": "^6.0.6",
-        "http-proxy-middleware": "^2.0.6",
         "socket.io-client": "^4.7.2"
     },
     "devDependencies": {
         "@astrojs/check": "^0.9.2",
         "@simplewebauthn/types": "^9.0.1",
         "@types/autosize": "^4.0.1",
-        "@types/canvas-confetti": "^1.6.0"
+        "@types/canvas-confetti": "^1.6.0",
+        "http-proxy-middleware": "^3.0.3"
     }
 }

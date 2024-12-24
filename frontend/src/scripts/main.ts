@@ -5,8 +5,6 @@ import { navigate } from 'astro:transitions/client';
 import * as Sentry from '@sentry/browser';
 
 if (urlParams.get('debug')) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     (window as CustomWindow).debug = true;
 } else {
     initSentry();

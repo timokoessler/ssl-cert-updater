@@ -67,7 +67,7 @@ export async function saveConfig(config_?: Config) {
         try {
             await mkdir(configDir, { recursive: true });
             writePossible = true;
-        } catch (err) {
+        } catch {
             writePossible = false;
         }
     }

@@ -155,7 +155,7 @@ async function setup() {
             socketTimeoutMS: 3000,
             serverSelectionTimeoutMS: 1000,
         });
-    } catch (err) {
+    } catch {
         mongoSpinner.fail('MongoDB connection failed');
         process.exit(1);
     }

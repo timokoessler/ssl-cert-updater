@@ -114,7 +114,7 @@ export async function requestLetsEncryptCert(
                 if (!challengeCompleted) {
                     try {
                         await client.deactivateAuthorization(authz);
-                    } catch (f) {
+                    } catch {
                         // Catch and suppress deactivateAuthorization() errors
                     }
                 }
@@ -132,7 +132,6 @@ export async function requestLetsEncryptCert(
             altNames: uniqueDomains,
         });
 
-        // eslint-disable-next-line quotes
         newCertRequestLog('info', "Sende finale Zertifikat-Anfrage an Let's Encrypt", id);
 
         // Finalize order with CSR

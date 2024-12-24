@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from '@simplewebauthn/server';
 import express from 'express';
 import base64url from 'base64url';
@@ -153,7 +152,6 @@ export default function (app: express.Application) {
                 expectedChallenge: user.webAuthnChallenge,
                 expectedOrigin: origin,
                 expectedRPID: rpID,
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 authenticator: authenticator,
                 requireUserVerification: true,
@@ -200,7 +198,7 @@ export default function (app: express.Application) {
                 secure: !isDev() ? true : false,
             });
             res.json({ verified });
-        } catch (error) {
+        } catch {
             return sendResponse(res, 500, 'Internal Server Error');
         }
     });

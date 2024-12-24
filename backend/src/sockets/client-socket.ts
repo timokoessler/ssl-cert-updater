@@ -24,7 +24,7 @@ interface ClientToServerEvents {
     getCertificates: (certIDs: string[], cb: (certs: SSLCert[]) => void) => void;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface InterServerEvents {}
 
 interface SocketData {
@@ -104,7 +104,7 @@ async function checkAuth(socket: Socket<ClientToServerEvents, ServerToClientEven
         }
 
         return true;
-    } catch (err) {
+    } catch {
         return false;
     }
 }

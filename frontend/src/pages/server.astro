@@ -228,14 +228,14 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                             {
                                 name: 'Zertifikat',
                                 id: '_id',
-                                formatter: (cell: any, row: any) => {
+                                formatter: (cell, row) => {
                                     return gridHtml(getSSLCertSelect(sslcerts, cell as string, row.cells[0].data as string));
                                 },
                             },
                             {
                                 name: 'Fullchain Pfad',
                                 id: 'fullchainPath',
-                                formatter: (cell: any, row: any) => {
+                                formatter: (cell, row) => {
                                     return gridHtml(
                                         `<input type="text" class="form-control" data-input="fullchainPathInput" placeholder="Dateipfad eingeben (.pem)" data-id="${row.cells[0].data}" value="${cell}" autocomplete="off" spellcheck="false">`,
                                     );
@@ -244,7 +244,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                             {
                                 name: 'Key Pfad',
                                 id: 'fullchainPath',
-                                formatter: (cell: any, row: any) => {
+                                formatter: (cell, row) => {
                                     return gridHtml(
                                         `<input type="text" class="form-control" data-input="keyPathInput" placeholder="Dateipfad eingeben (.pem)" data-id="${row.cells[0].data}" value="${cell}" autocomplete="off" spellcheck="false">`,
                                     );
@@ -252,7 +252,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                             },
                             {
                                 name: 'Aktionen',
-                                formatter: (_cell: any, row: any) => {
+                                formatter: (_cell, row) => {
                                     return gridHtml(`<div class="btn-list">
                                     <button type="button" class="btn btn-danger grid-btn" data-action="deleteSSLCert" data-id="${row.cells[0].data}"><i class="ti ti-trash"></i></button>
                                 </div>`);
@@ -419,10 +419,12 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
                         const cleanedPreCommands = preCommands.filter((command) => command.length > 0);
                         for (const i in cleanedPreCommands) {
+                            // eslint-disable-next-line security/detect-object-injection
                             cleanedPreCommands[i] = cleanedPreCommands[i].trim();
                         }
                         const cleanedPostCommands = postCommands.filter((command) => command.length > 0);
                         for (const i in cleanedPostCommands) {
+                            // eslint-disable-next-line security/detect-object-injection
                             cleanedPostCommands[i] = cleanedPostCommands[i].trim();
                         }
 
@@ -452,7 +454,9 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 
                         const cleanedCerts = [...certs];
                         for (const i in cleanedCerts) {
+                            // eslint-disable-next-line security/detect-object-injection
                             cleanedCerts[i].fullchainPath = cleanedCerts[i].fullchainPath.trim();
+                            // eslint-disable-next-line security/detect-object-injection
                             cleanedCerts[i].keyPath = cleanedCerts[i].keyPath.trim();
                         }
 
@@ -584,13 +588,13 @@ import BaseLayout from '@layouts/BaseLayout.astro';
             columns: [
                 {
                     name: 'ID',
-                    formatter: (cell: any) => {
+                    formatter: (cell) => {
                         return Number(cell) + 1;
                     },
                 },
                 {
                     name: 'Befehl',
-                    formatter: (_cell: any, row: any) => {
+                    formatter: (_cell, row) => {
                         return gridHtml(
                             `<input type="text" class="form-control" data-input="${type}CommandInput" placeholder="Befehl eingeben (z.B. Webserver neustarten)" data-id="${row.cells[0].data}" value="${row.cells[1].data}" autocomplete="off" spellcheck="false">`,
                         );
@@ -598,7 +602,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
                 },
                 {
                     name: 'Aktionen',
-                    formatter: (_cell: any, row: any) => {
+                    formatter: (_cell, row) => {
                         return gridHtml(`<div class="btn-list">
                                     <button type="button" class="btn btn-danger grid-btn" data-action="delete${capitalizeFirstLetter(type)}Command" data-id="${
                                         row.cells[0].data

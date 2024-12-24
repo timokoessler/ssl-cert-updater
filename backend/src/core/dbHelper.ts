@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import db from './db';
 import { FilterQuery, Document } from 'mongoose';
 import * as Sentry from '@sentry/node';

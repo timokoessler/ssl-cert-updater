@@ -28,13 +28,17 @@ export default defineConfig({
                 to: '/forgotPasswordChange',
             },
         ]),
-        proxyMiddleware(['/api', '/socket', '/install', '/update'], {
+        proxyMiddleware({
             target: 'http://127.0.0.1:3000',
+            pathFilter: ['/api', '/socket', '/install', '/update'],
             changeOrigin: true,
             cookieDomainRewrite: '',
             ws: true,
             logLevel: 'warn',
+            timeout: 10_000,
+            followRedirects: true,
         }),
+
         // ----------------------------------
     ],
     server: {

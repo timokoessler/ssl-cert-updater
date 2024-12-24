@@ -57,7 +57,7 @@ interface ClientToServerEvents {
     removeSSLCert: (id: string, revoke: boolean, revokeReason: number, cb: (success: boolean, errorMsg?: string) => void) => void;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface InterServerEvents {}
 
 interface SocketData {
@@ -83,7 +83,7 @@ async function checkAuth(socket: Socket<ClientToServerEvents, ServerToClientEven
             }
         }
         return false;
-    } catch (err) {
+    } catch {
         return false;
     }
 }

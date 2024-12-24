@@ -28,7 +28,7 @@ export default function (app: express.Application) {
         let oldPasswordHash: string;
         try {
             oldPasswordHash = await generatePasswordHash(oldPass, user.salt);
-        } catch (error) {
+        } catch {
             return sendResponse(res, 500, 'Internal Server Error');
         }
 
@@ -46,7 +46,7 @@ export default function (app: express.Application) {
         let newPasswordHash: string;
         try {
             newPasswordHash = await generatePasswordHash(newPass, user.salt);
-        } catch (error) {
+        } catch {
             return sendResponse(res, 500, 'Internal Server Error');
         }
 
@@ -80,7 +80,7 @@ export default function (app: express.Application) {
         let currentPasswordHash: string;
         try {
             currentPasswordHash = await generatePasswordHash(pass, user.salt);
-        } catch (error) {
+        } catch {
             return sendResponse(res, 500, 'Internal Server Error');
         }
 
@@ -112,7 +112,7 @@ export default function (app: express.Application) {
         try {
             uuid = Buffer.from(userIDBase64, 'base64url').toString('utf-8');
             newEmail = Buffer.from(newEmailBase64, 'base64url').toString('utf-8');
-        } catch (e) {
+        } catch {
             return sendResponse(res, 400, 'Der verwendete Link ist ungültig. (0x2)');
         }
         if (!isUUID(uuid)) {
@@ -165,7 +165,7 @@ export default function (app: express.Application) {
         let currentPasswordHash: string;
         try {
             currentPasswordHash = await generatePasswordHash(pass, user.salt);
-        } catch (error) {
+        } catch {
             return sendResponse(res, 500, 'Internal Server Error');
         }
 

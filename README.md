@@ -5,7 +5,7 @@ A tool to automatically issue Let's Encrypt wildcard SSL certificates and deploy
 After the initial setup nearly any action can be done through the web UI.
 
 > [!WARNING]  
-> This software was previously a internal tool of a company and is now open source and may not be self-explanatory yet. The ui is currently only available in German.
+> This software was previously a internal tool of a company and is now open source and may not be self-explanatory. The ui is currently only available in German.
 
 ## Getting started
 
@@ -22,14 +22,6 @@ docker compose run -it --rm ssl-cert-updater cli
 ```
 
 After first setup, you can use the CLI to invite users.
-
-## Todos
-
--   Translate application from German to English
--   Improve dark mode
--   Add more configuration options through ENV variables
--   Create documentation
--   Add 2FA App support instead of email
 
 ## Contact
 

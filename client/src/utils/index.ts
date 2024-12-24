@@ -1,7 +1,6 @@
 import { platform, release } from 'os';
 
 export function isCompiled() {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return process.pkg !== undefined;
 }
