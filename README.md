@@ -6,6 +6,7 @@ After the initial setup nearly any action can be done through the web UI.
 
 > [!WARNING]  
 > This software was previously a internal tool of a company and is now open source and may not be self-explanatory. The ui is currently only available in German.
+> This software is in maintenance mode.
 
 ## Getting started
 
@@ -27,7 +28,7 @@ After first setup, you can use the CLI to invite users.
 
 If a public GitHub issue or discussion is not the right choice for your concern, you can contact me directly:
 
--   E-Mail: [info@timokoessler.de](mailto:info@timokoessler.de)
+- E-Mail: [info@timokoessler.de](mailto:info@timokoessler.de)
 
 ## License
 

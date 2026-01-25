@@ -5,7 +5,7 @@ import '@tabler/core/dist/css/tabler-vendors.min.css';
 import '@tabler/icons-webfont/tabler-icons.min.css';
 import Sidebar from '@components/Sidebar.astro';
 import Footer from '@components/Footer.astro';
-import { ViewTransitions } from 'astro:transitions';
+import { ClientRouter } from 'astro:transitions';
 
 interface Props {
     title?: string;
@@ -35,7 +35,7 @@ const {
         <meta name="title" content={title} />
         <meta name="description" content={description} />
 
-        <ViewTransitions />
+        <ClientRouter />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -72,7 +72,13 @@ const {
                                 <div class="container-tight">
                                     <div class="text-center mb-4">
                                         <a href="/" class="navbar-brand navbar-brand-autodark">
-                                            <img src="/img/logo-text.svg" id="header-img" height="100" alt={import.meta.env.PUBLIC_APP_NAME} />
+                                            <img
+                                                src="/img/logo-text.svg"
+                                                id="header-img"
+                                                class="header-img-auth"
+                                                height="100"
+                                                alt={import.meta.env.PUBLIC_APP_NAME}
+                                            />
                                         </a>
                                     </div>
                                     <slot />
@@ -168,6 +174,11 @@ const {
                 padding: 8px 14px !important;
             }
 
+            .header-img-auth {
+                max-width: 80%;
+                margin: auto;
+            }
+
             [data-bs-theme='dark'] .navbar-brand-autodark .navbar-brand-image {
                 filter: none !important;
             }
@@ -197,7 +208,9 @@ const {
             }
         </style>
         <script>
-            import '@tabler/core/dist/js/tabler.min.js';
+            // @ts-expect-error Not typed :(
+            import * as tabler from '@tabler/core/js/tabler.js';
+            globalThis.bootstrap = tabler.bootstrap;
             import '@scripts/main';
         </script>
     </body>

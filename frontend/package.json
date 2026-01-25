@@ -24,7 +24,7 @@
         "socket.io-client": "^4.7.2"
     },
     "devDependencies": {
-        "@astrojs/check": "^0.9.2",
+        "@astrojs/check": "^0.9.6",
         "@simplewebauthn/types": "^9.0.1",
         "@types/autosize": "^4.0.1",
         "@types/canvas-confetti": "^1.6.0",
