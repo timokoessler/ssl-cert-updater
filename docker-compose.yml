@@ -1,6 +1,6 @@
 services:
     ssl-cert-updater:
-        image: timokoessler/ssl-cert-updater:latest
+        image: timokoessler/ssl-cert-updater:main
         restart: always
         container_name: ssl-cert-updater
         volumes:

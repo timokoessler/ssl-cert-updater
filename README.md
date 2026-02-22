@@ -1,12 +1,11 @@
 # SSL Cert Updater
 
 A tool to automatically issue Let's Encrypt wildcard SSL certificates and deploy them to multiple servers.
-
 After the initial setup nearly any action can be done through the web UI.
 
 > [!WARNING]  
 > This software was previously a internal tool of a company and is now open source and may not be self-explanatory. The ui is currently only available in German.
-> This software is in maintenance mode.
+> This software is in maintenance mode and will most likely not receive any new features.
 
 ## Getting started
 
