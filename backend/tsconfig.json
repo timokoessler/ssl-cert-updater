@@ -10,6 +10,7 @@
         "esModuleInterop": true,
         "strict": false,
         "checkJs": true,
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "skipLibCheck": true
     }
 }
