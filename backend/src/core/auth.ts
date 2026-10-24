@@ -1,4 +1,4 @@
-import { verify as verifyJWT, sign as signJWT } from 'jsonwebtoken';
+import { verify as verifyJWT, sign as signJWT, type SignOptions } from 'jsonwebtoken';
 import crypto from 'node:crypto';
 import express from 'express';
 import db from './db';
@@ -11,7 +11,7 @@ import { deleteDocumentQuery, deleteDocumentsQuery, getDocument } from './dbHelp
 
 let privateKey: string;
 
-export function generateAuthToken(sessionInfo: SessionInfo, expiresIn: number | string) {
+export function generateAuthToken(sessionInfo: SessionInfo, expiresIn: SignOptions['expiresIn']) {
     return new Promise<string>((resolve, reject) => {
         signJWT(sessionInfo, privateKey, { expiresIn: expiresIn, algorithm: 'ES512' }, (err, token) => {
             if (err) {
@@ -39,7 +39,7 @@ export function generateRegisterToken(email: string) {
     });
 }
 
-export function generateKnownDeviceToken(uid: string, browserFingerprint: string, expiresIn: number | string) {
+export function generateKnownDeviceToken(uid: string, browserFingerprint: string, expiresIn: SignOptions['expiresIn']) {
     return new Promise<string>((resolve, reject) => {
         signJWT(
             { uid: sha512(uid), hash: sha512(browserFingerprint), type: 'knownDevice' },

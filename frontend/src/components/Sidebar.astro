@@ -32,7 +32,7 @@ const path = Astro.url.pathname;
         </div>
         <div class="collapse navbar-collapse" id="sidebar-menu">
             <ul class="navbar-nav pt-lg-4">
-                <li class={`nav-item ${path === '/' ? 'active' : ''}`}>
+                <li class={`nav-item ${path === '/' || path === '/index.html' ? 'active' : ''}`}>
                     <a class="nav-link" href="/" rel="prefetch-intent">
                         <span class="nav-link-icon d-md-none d-lg-inline-block">
                             <svg

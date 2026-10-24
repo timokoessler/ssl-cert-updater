@@ -1,21 +1,20 @@
-import chokidar from 'chokidar';
+import chokidar, { type FSWatcher } from 'chokidar';
 import { log } from './log';
 import { getSocket } from '../websocket';
 
-let watcher: chokidar.FSWatcher;
+let watcher: FSWatcher;
 const watchedFiles: string[] = [];
 let lastEvent = 0;
 
 export default function initWatcher(path: string[] | string) {
     watcher = chokidar.watch(path, {
         ignoreInitial: true,
-        disableGlobbing: true,
     });
 
     watchedFiles.push(...(Array.isArray(path) ? path : [path]));
 
     watcher.on('error', (err) => {
-        log('error', `Error in file watcher: ${err.message}`);
+        log('error', `Error in file watcher: ${err instanceof Error ? err.message : String(err)}`);
     });
 
     watcher.on('ready', () => {

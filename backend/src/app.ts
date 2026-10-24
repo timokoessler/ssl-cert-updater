@@ -5,7 +5,22 @@ import * as Sentry from '@sentry/node';
 if (process.env.SENTRY_DSN) {
     Sentry.init({
         dsn: process.env.SENTRY_DSN,
-        tracesSampleRate: 0,
+        tracesSampleRate: 0.0,
+        // Needs @sentry/server-runtime-injection to stay external, but the backend is fully bundled
+        enableRuntimeChannelInjection: false,
+        dataCollection: {
+            userInfo: false,
+            cookies: false,
+            httpHeaders: {
+                request: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] },
+                response: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] },
+            },
+            httpBodies: [],
+            urlQueryParams: { deny: ['forwarded', '-ip', 'remote-', 'via', '-user'] },
+            genAI: { inputs: false, outputs: false },
+            databaseQueryData: false,
+            graphQL: { document: false, variables: false },
+        },
     });
 }
 

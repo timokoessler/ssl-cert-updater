@@ -67,6 +67,7 @@ declare global {
         credentialBackedUp: boolean;
         userID: string;
         name: string;
+        __v?: number;
     };
 
     type LetsEncryptAccount = {
